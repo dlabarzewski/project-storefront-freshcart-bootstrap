@@ -59,8 +59,8 @@
           <button type="button" class="btn-close" aria-label="Close"></button>
         </div>
         <div class="d-block">
-          <ul class="navbar-nav">
-            <li *ngFor="let item of categories$ | async" class="nav-item">
+          <ul class="navbar-nav" *ngIf="model$ | async as model">
+            <li *ngFor="let item of model.categories" class="nav-item">
               <a
                 class="nav-link"
                 [routerLink]="['/categories/', item.id]"
@@ -84,8 +84,8 @@
         <div class="row g-4">
           <div class="col-12">
             <h6 class="mb-4">Categories</h6>
-            <ul class="nav">
-              <li *ngFor="let item of categories$ | async" class="nav-item col-12">
+            <ul class="nav" *ngIf="model$ | async as model">
+              <li *ngFor="let item of model.categories" class="nav-item col-12">
                 <a [routerLink]="['/categories/', item.id]" class="nav-link">{{ item.name }}</a>
               </li>
             </ul>
@@ -96,8 +96,8 @@
         <div class="row g-4 pb-4">
           <div class="col-12">
             <h6 class="mb-4">Stores</h6>
-            <ul class="nav">
-              <li *ngFor="let item of stores$ | async" class="nav-item col-12">
+            <ul class="nav" *ngIf="model$ | async as model">
+              <li *ngFor="let item of model.stores" class="nav-item col-12">
                 <a [routerLink]="['/stores/', item.id]" class="nav-link">{{ item.name }}</a>
               </li>
             </ul>
@@ -108,8 +108,8 @@
         <div class="row g-4">
           <div class="col-12">
             <h6 class="mb-4">Get to know us</h6>
-            <ul class="nav">
-              <li *ngFor="let item of footerLinks$ | async" class="nav-item col-12 mb-2">
+            <ul class="nav" *ngIf="model$ | async as model">
+              <li *ngFor="let item of model.footerLinks" class="nav-item col-12 mb-2">
                 <a href="#!" class="nav-link">{{ item }}</a>
               </li>
             </ul>
