@@ -1,0 +1,20 @@
+<ng-container *ngIf="model$ | async as model">
+
+  <div class="row">
+    <div class="col-12 mb-6"><h3 class="mb-1">Shop by Category</h3></div>
+    <div *ngFor="let item of model.categories" class="col-6 col-lg-3 mb-6">
+      <a
+        [routerLink]="['/categories', item.id]"
+        class="text-decoration-none text-inherit"
+      >
+        <div class="card card-product">
+          <div class="card-body text-center py-8">
+            <img [src]="item.imageUrl" [alt]="item.name" class="mb-3" />
+            <div class="text-truncate">{{ item.name }}</div>
+          </div>
+        </div></a
+      >
+    </div>
+  </div>
+
+</ng-container>
