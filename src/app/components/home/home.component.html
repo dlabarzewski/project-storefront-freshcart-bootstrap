@@ -16,6 +16,30 @@
     </div>
   </div>
 
+  <div class="row mb-10" *ngFor="let category of model.featuredCategories">
+    <div class="col-12 mb-6">
+      <h3 class="mb-1">{{ category.name }}</h3>
+    </div>
+    <div *ngFor="let product of category.products" class="col mb-6">
+      <div class="card card-product">
+        <div class="card-body">
+          <div class="text-center position-relative">
+            <a
+              ><img
+                [src]="product.imageUrl"
+                [alt]="product.name"
+                class="mb-3 img-fluid"
+            /></a>
+          </div>
+          <h2 class="fs-6">{{ product.name }}</h2>
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <div><span class="text-dark">${{ product.price }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row">
     <div class="col-12 mb-6"><h3 class="mb-1">Stores</h3></div>
     <div class="col-12">
@@ -42,8 +66,8 @@
             }}</a>
           </h5>
           <div class="small text-muted">
-            <ng-container *ngFor="let subitem of item.tags; last as last"
-              ><span>{{ subitem }}</span
+            <ng-container *ngFor="let subitem of item.tags; last as last">
+              <span>{{ subitem }}</span
               ><span *ngIf="!last" class="mx-1"
                 ><svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -53,8 +77,9 @@
                   class="bi bi-circle-fill align-middle"
                   viewBox="0 0 16 16"
                 >
-                  <circle cx="8" cy="8" r="8" /></svg>
-                </span>
+                  <circle cx="8" cy="8" r="8" />
+                </svg>
+              </span>
             </ng-container>
           </div>
           <div>
@@ -65,6 +90,5 @@
         </div>
       </div>
     </div>
-
   </div>
 </ng-container>
