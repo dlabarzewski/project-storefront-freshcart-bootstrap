@@ -14,6 +14,8 @@ import { StoreService } from './services/store.service';
 export class AppComponent {
   title = 'ng-freshcard-bootstrap-theme';
 
+  public isMobileMenuShown: boolean = false;
+
   readonly model$: Observable<LayoutQueryModel> = combineLatest([
     this._categoryService.getAll(),
     this._storeService.getAll(),
@@ -40,5 +42,13 @@ export class AppComponent {
       })),
       footerLinks
     };
+  }
+
+  public toggleMobileMenu(): void {
+    this.isMobileMenuShown = !this.isMobileMenuShown;
+  }
+
+  public hideMobileMenu(): void {
+    this.isMobileMenuShown = false;
   }
 }
