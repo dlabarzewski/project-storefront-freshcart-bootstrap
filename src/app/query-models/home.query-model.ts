@@ -1,5 +1,8 @@
-import { CategoryModel } from '../models/category.model';
+import { HomeCategoryQueryModel } from './home-category.query-model';
+import { HomeStoreQueryModel } from './home-store.query-model';
 
 export interface HomeQueryModel {
-  readonly categories: CategoryModel[];
+  readonly categories: HomeCategoryQueryModel[];
+  readonly stores: HomeStoreQueryModel[];
+  readonly storesCount: number;
 }
