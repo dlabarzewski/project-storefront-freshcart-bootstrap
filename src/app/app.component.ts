@@ -30,8 +30,14 @@ export class AppComponent {
 
   private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], footerLinks: string[]): LayoutQueryModel {
     return {
-      categories,
-      stores,
+      categories: categories.map(category => ({
+        id: category.id,
+        name: category.name
+      })),
+      stores: stores.map(store => ({
+        id: store.id,
+        name: store.name
+      })),
       footerLinks
     };
   }
