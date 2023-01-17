@@ -29,7 +29,6 @@ export class HomeComponent {
       ([categories, stores, products]: [CategoryModel[], StoreModel[], ProductModel[]]) => this._mapQueryModel(categories, stores, products)
     )
   );
-  readonly products$: Observable<ProductModel[]> = this._productService.getAll();
 
   constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _productService: ProductService) {
   }
