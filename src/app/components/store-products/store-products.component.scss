@@ -1,0 +1,24 @@
+.btn-absolute-search {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    background-color: transparent;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-absolute-search__icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+}
+
+.store-card {
+    background-image: url('/assets/images/svg-graphics/store-graphics.svg');
+    background-size: auto 80%;
+    background-repeat: no-repeat;
+    background-position: right center;
+}
