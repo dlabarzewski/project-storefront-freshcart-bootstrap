@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
-import { combineLatest, map, Observable, switchMap } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
+import { StoreProductsQueryModel } from '../../query-models/store-products.query-model';
 import { StoreModel } from '../../models/store.model';
 import { ProductModel } from '../../models/product.model';
 import { StoreService } from '../../services/store.service';
 import { ProductService } from '../../services/product.service';
-import { StoreProductsQueryModel } from 'src/app/query-models/store-products.query-model';
+import { DistanceService } from '../../services/distance.service';
 
 @Component({
   selector: 'app-store-products',
@@ -28,14 +30,14 @@ export class StoreProductsComponent {
     )
   )
 
-  constructor(private _activatedRoute: ActivatedRoute, private _storeService: StoreService, private _productService: ProductService) {
+  constructor(private _activatedRoute: ActivatedRoute, private _storeService: StoreService, private _productService: ProductService, private _distanceService: DistanceService) {
   }
 
   private _mapQueryModel(store: StoreModel, products: ProductModel[]): StoreProductsQueryModel {
     return {
       id: store.id,
       name: store.name,
-      distanceInKm: (store.distanceInMeters / 1000).toFixed(1),
+      distanceInKm: this._distanceService.convertMetersToKilometers(store.distanceInMeters),
       logoUrl: store.logoUrl,
       products: products.filter(product => product.storeIds.includes(store.id))
         .map(product => ({

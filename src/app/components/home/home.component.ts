@@ -9,6 +9,7 @@ import { CategoryService } from '../../services/category.service';
 import { StoreService } from '../../services/store.service';
 import { ProductService } from '../../services/product.service';
 import { CategoryId } from 'src/app/statics/category-id.static';
+import { DistanceService } from 'src/app/services/distance.service';
 
 @Component({
   selector: 'app-home',
@@ -30,7 +31,7 @@ export class HomeComponent {
     )
   );
 
-  constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _productService: ProductService) {
+  constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _productService: ProductService, private _distanceService: DistanceService) {
   }
 
   private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], products: ProductModel[]): HomeQueryModel {
@@ -48,7 +49,7 @@ export class HomeComponent {
         name: store.name,
         logoUrl: store.logoUrl,
         tags: (store.tags ?? []).map(tag => tag.name),
-        distanceInKm: (store.distanceInMeters / 1000).toFixed(1)
+        distanceInKm: this._distanceService.convertMetersToKilometers(store.distanceInMeters)
       })),
       storesCount: stores.length ?? 0,
       featuredCategories: categories.filter(category => this.featuredCategoriesIds.includes(category.id))
