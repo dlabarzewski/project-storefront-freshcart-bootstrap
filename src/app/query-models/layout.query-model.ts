@@ -5,4 +5,5 @@ export interface LayoutQueryModel {
   readonly categories: LayoutCategoryQueryModel[];
   readonly stores: LayoutStoreQueryModel[];
   readonly footerLinks: string[];
+  readonly isMobileMenuShown: boolean;
 }
