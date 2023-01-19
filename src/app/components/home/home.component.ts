@@ -14,6 +14,7 @@ import { HomeStoreQueryModel } from 'src/app/query-models/home-store.query-model
 import { HomeFeaturedCategoryQueryModel } from 'src/app/query-models/home-featured-category.query-model';
 import { HomeFeaturedCategoryProductQueryModel } from 'src/app/query-models/home-featured-category-product.query-model';
 import { HomeComponentConfig } from 'src/app/statics/home-component-config.static';
+import { StoreTagModel } from 'src/app/models/store-tag.model';
 
 @Component({
   selector: 'app-home',
@@ -27,24 +28,32 @@ export class HomeComponent {
 
   readonly model$: Observable<HomeQueryModel> = combineLatest([
     this._categoryService.getAll(),
-    this._storeService.getAllWithTags(),
+    this._storeService.getAll(),
+    this._storeService.getAllTags(),
     this._productService.getAll(),
     this._featuredCategoriesIds
   ]).pipe(
     map(
       (
-        [categories, stores, products, featuredCategoriesIds]: [CategoryModel[], StoreModel[], ProductModel[], string[]]
-      ) => this._mapQueryModel(categories, stores, products, featuredCategoriesIds)
+        [categories, stores, storeTags, products, featuredCategoriesIds]:
+        [CategoryModel[], StoreModel[], StoreTagModel[], ProductModel[], string[]]
+      ) => this._mapQueryModel(categories, stores, storeTags, products, featuredCategoriesIds)
     )
   );
 
   constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _productService: ProductService) {
   }
 
-  private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], products: ProductModel[], featuredCategoriesIds: string[]): HomeQueryModel {
+  private _mapQueryModel(
+    categories: CategoryModel[],
+    stores: StoreModel[],
+    storeTags: StoreTagModel[],
+    products: ProductModel[],
+    featuredCategoriesIds: string[]
+  ): HomeQueryModel {
     return {
       categories: this._mapCategoriesToQueryModel(categories),
-      stores: this._mapStoresToQueryModel(stores),
+      stores: this._mapStoresToQueryModel(stores, storeTags),
       storesCount: stores.length ?? 0,
       featuredCategories: this._mapFeaturedCategoriesToQueryModel(categories, products, featuredCategoriesIds)
     }
@@ -58,12 +67,14 @@ export class HomeComponent {
     }));
   }
 
-  private _mapStoresToQueryModel(stores: StoreModel[]): HomeStoreQueryModel[] {
+  private _mapStoresToQueryModel(stores: StoreModel[], storeTags: StoreTagModel[]): HomeStoreQueryModel[] {
+    const tagsMap = storeTags.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, StoreTagModel>);
+
     return stores.map(store => ({
       id: store.id,
       name: store.name,
       logoUrl: store.logoUrl,
-      tags: (store.tags ?? []).map(tag => tag.name),
+      tags: (store.tagIds ?? []).map(tagId => tagsMap[tagId].name),
       distanceInKm: (store.distanceInMeters / 1000).toFixed(1)
     }));
   }
