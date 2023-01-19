@@ -84,7 +84,7 @@
           </div>
           <div>
             <div class="badge text-bg-light border">
-              {{ item.distanceInKm }} km
+              {{ item.distanceInMeters | distance:'km':1 }} km
             </div>
           </div>
         </div>

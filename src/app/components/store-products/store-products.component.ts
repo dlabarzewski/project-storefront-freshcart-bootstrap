@@ -7,7 +7,6 @@ import { StoreModel } from '../../models/store.model';
 import { ProductModel } from '../../models/product.model';
 import { StoreService } from '../../services/store.service';
 import { ProductService } from '../../services/product.service';
-import { DistanceService } from '../../services/distance.service';
 
 @Component({
   selector: 'app-store-products',
@@ -30,14 +29,14 @@ export class StoreProductsComponent {
     )
   )
 
-  constructor(private _activatedRoute: ActivatedRoute, private _storeService: StoreService, private _productService: ProductService, private _distanceService: DistanceService) {
+  constructor(private _activatedRoute: ActivatedRoute, private _storeService: StoreService, private _productService: ProductService) {
   }
 
   private _mapQueryModel(store: StoreModel, products: ProductModel[]): StoreProductsQueryModel {
     return {
       id: store.id,
       name: store.name,
-      distanceInKm: this._distanceService.convertMetersToKilometers(store.distanceInMeters),
+      distanceInMeters: store.distanceInMeters,
       logoUrl: store.logoUrl,
       products: products.filter(product => product.storeIds.includes(store.id))
         .map(product => ({

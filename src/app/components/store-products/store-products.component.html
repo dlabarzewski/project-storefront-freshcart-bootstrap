@@ -12,7 +12,7 @@
         <div class="mt-4">
           <h1 class="mb-1 h4">{{ model.name }}</h1>
           <div class="small text-muted">
-            <span>It is only {{ model.distanceInKm }} km away from you!</span>
+            <span>It is only {{ model.distanceInMeters | distance:'km':1 }} km away from you!</span>
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ import { CollapseModule } from 'ngx-bootstrap/collapse';
     HttpClientModule,
     CollapseModule,
     CommonModule,
-    RouterModule,
+    RouterModule
   ],
   providers: [],
   bootstrap: [AppComponent],
