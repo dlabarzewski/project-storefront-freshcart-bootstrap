@@ -29,7 +29,6 @@ export class AppComponent {
     ),
     shareReplay(1)
   )
-  public isMobileMenuShown$: Observable<boolean> = this._isMobileMenuShownSubject.asObservable();
 
   constructor(private _categoryService: CategoryService, private _storeService: StoreService) {
   }
