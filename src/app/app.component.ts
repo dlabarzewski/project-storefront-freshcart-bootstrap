@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
-import { combineLatest, map, Observable, of, shareReplay } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay } from 'rxjs';
+import { LayoutQueryModel } from './query-models/layout.query-model';
 import { CategoryModel } from './models/category.model';
 import { StoreModel } from './models/store.model';
-import { LayoutQueryModel } from './query-models/layout.query-model';
 import { CategoryService } from './services/category.service';
 import { StoreService } from './services/store.service';
 
@@ -14,15 +14,18 @@ import { StoreService } from './services/store.service';
 export class AppComponent {
   title = 'ng-freshcard-bootstrap-theme';
 
-  public isMobileMenuShown: boolean = false;
+  private _isMobileMenuShownSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   readonly model$: Observable<LayoutQueryModel> = combineLatest([
     this._categoryService.getAll(),
     this._storeService.getAll(),
-    of(['Company', 'About', 'Blog', 'Help Center', 'Our Value'])
+    of(['Company', 'About', 'Blog', 'Help Center', 'Our Value']),
+    this._isMobileMenuShownSubject.asObservable()
   ]).pipe(
     map(
-      ([categories, stores, footerLinks]: [CategoryModel[], StoreModel[], string[]]) => this._mapQueryModel(categories, stores, footerLinks)
+      (
+        [categories, stores, footerLinks, isMobileMenuShown]: [CategoryModel[], StoreModel[], string[], boolean]
+      ) => this._mapQueryModel(categories, stores, footerLinks, isMobileMenuShown)
     ),
     shareReplay(1)
   )
@@ -30,19 +33,26 @@ export class AppComponent {
   constructor(private _categoryService: CategoryService, private _storeService: StoreService) {
   }
 
-  private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], footerLinks: string[]): LayoutQueryModel {
+  private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], footerLinks: string[], isMobileMenuShown: boolean): LayoutQueryModel {
     return {
-      categories,
-      stores,
-      footerLinks
+      categories: categories.map(category => ({
+        id: category.id,
+        name: category.name
+      })),
+      stores: stores.map(store => ({
+        id: store.id,
+        name: store.name
+      })),
+      footerLinks,
+      isMobileMenuShown
     };
   }
 
   public toggleMobileMenu(): void {
-    this.isMobileMenuShown = !this.isMobileMenuShown;
+    this._isMobileMenuShownSubject.next(!this._isMobileMenuShownSubject.value);
   }
 
   public hideMobileMenu(): void {
-    this.isMobileMenuShown = false;
+    this._isMobileMenuShownSubject.next(false);
   }
 }
