@@ -26,7 +26,6 @@
               />
             </a>
             <div class="d-flex align-items-center lh-1">
-              <!-- Button -->
               <button
                 class="navbar-toggler collapsed"
                 type="button"
@@ -47,8 +46,8 @@
 </header>
 <div class="border-bottom pb-lg-4 pb-3">
   <nav class="navbar navbar-expand-lg navbar-light navbar-default pt-0 pb-0">
-    <div class="container px-0 px-md-3">
-      <div class="offcanvas offcanvas-start p-4 p-lg-0" [class.show]="isMobileMenuShown">
+    <div *ngIf="model$ | async as model" class="container px-0 px-md-3">
+      <div class="offcanvas offcanvas-start p-4 p-lg-0" [ngClass]="{ 'show': model.isMobileMenuShown }">
         <div
           class="d-flex justify-content-between align-items-center mb-2 d-block d-lg-none"
         >
@@ -60,7 +59,7 @@
           <button type="button" class="btn-close" aria-label="Close" (click)="hideMobileMenu()"></button>
         </div>
         <div class="d-block">
-          <ul class="navbar-nav" *ngIf="model$ | async as model">
+          <ul class="navbar-nav">
             <li *ngFor="let item of model.categories" class="nav-item">
               <a
                 class="nav-link"
@@ -131,29 +130,29 @@
             <li class="list-inline-item text-dark">Payment Partners</li>
             <li class="list-inline-item">
               <a href="#!"
-                ><img src="../assets/images/payment/amazonpay.svg" alt=""
+                ><img src="/assets/images/payment/amazonpay.svg" alt=""
               /></a>
             </li>
             <li class="list-inline-item">
               <a href="#!"
                 ><img
-                  src="../assets/images/payment/american-express.svg"
+                  src="/assets/images/payment/american-express.svg"
                   alt=""
               /></a>
             </li>
             <li class="list-inline-item">
               <a href="#!"
-                ><img src="../assets/images/payment/mastercard.svg" alt=""
+                ><img src="/assets/images/payment/mastercard.svg" alt=""
               /></a>
             </li>
             <li class="list-inline-item">
               <a href="#!"
-                ><img src="../assets/images/payment/paypal.svg" alt=""
+                ><img src="/assets/images/payment/paypal.svg" alt=""
               /></a>
             </li>
             <li class="list-inline-item">
               <a href="#!"
-                ><img src="../assets/images/payment/visa.svg" alt=""
+                ><img src="/assets/images/payment/visa.svg" alt=""
               /></a>
             </li>
           </ul>
@@ -166,17 +165,17 @@
             <li class="list-inline-item ms-4">
               <a href="#!">
                 <img
-                  src="../assets/images/appbutton/appstore-btn.svg"
+                  src="/assets/images/appbutton/appstore-btn.svg"
                   alt=""
-                  style="width: 140px"
+                  class="footer-app-store-icon"
               /></a>
             </li>
             <li class="list-inline-item">
               <a href="#!">
                 <img
-                  src="../assets/images/appbutton/googleplay-btn.svg"
+                  src="/assets/images/appbutton/googleplay-btn.svg"
                   alt=""
-                  style="width: 140px"
+                  class="footer-app-store-icon"
               /></a>
             </li>
           </ul>

@@ -1,8 +1,9 @@
-import { CategoryModel } from '../models/category.model';
-import { StoreModel } from '../models/store.model';
+import { LayoutCategoryQueryModel } from './layout-category.query-model';
+import { LayoutStoreQueryModel } from './layout-store.query-model';
 
 export interface LayoutQueryModel {
-  readonly categories: CategoryModel[];
-  readonly stores: StoreModel[];
+  readonly categories: LayoutCategoryQueryModel[];
+  readonly stores: LayoutStoreQueryModel[];
   readonly footerLinks: string[];
+  readonly isMobileMenuShown: boolean;
 }
