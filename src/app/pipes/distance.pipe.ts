@@ -13,7 +13,7 @@ export class DistancePipe implements PipeTransform {
       factor = 0.001;
     }
 
-    let converted = meters * factor;
+    const converted = meters * factor;
 
     return converted.toFixed(roundTo);
   }
