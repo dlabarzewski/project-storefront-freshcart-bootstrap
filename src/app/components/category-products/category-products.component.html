@@ -1,0 +1,28 @@
+<ng-container *ngIf="model$ | async as model">
+  <div class="row gx-10">
+    <div class="col-12 col-lg-3 col-md-4 mb-4 mb-md-0">
+      <h5 class="mb-3">Categories</h5>
+      <ul class="nav nav-category">
+        <li *ngFor="let item of model.categories" class="nav-item border-bottom w-100">
+          <a [routerLink]="['/categories', item.id]" class="nav-link">
+            {{ item.name }}
+            <i class="feather-icon icon-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-12 col-lg-9 col-md-8">
+      <div class="card mb-4 bg-light border-0">
+        <div class="card-body p-9">
+          <h2 *ngIf="model.category; else nocategory" class="mb-0 fs-1">
+            {{ model.category.name }}
+          </h2>
+          <ng-template #nocategory>
+            <h2 class="mb-0 fs-1">Nie znaleziono kategorii</h2>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
