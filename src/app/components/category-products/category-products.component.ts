@@ -28,10 +28,10 @@ export class CategoryProductsComponent implements OnInit {
   private _defaultLimit: number = 5;
 
   private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of([
-    { id: ProductSorting.featureValueDesc, name: 'Featured' },
-    { id: ProductSorting.priceAsc, name: 'Price: Low to High' },
-    { id: ProductSorting.priceDesc, name: 'Price: High to Low' },
-    { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating' }
+    { id: ProductSorting.featureValueDesc, name: 'Featured', sortBy: 'featureValue', sortAsc: false },
+    { id: ProductSorting.priceAsc, name: 'Price: Low to High', sortBy: 'price', sortAsc: true },
+    { id: ProductSorting.priceDesc, name: 'Price: High to Low', sortBy: 'price', sortAsc: false },
+    { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating', sortBy: 'ratingValue', sortAsc: false }
   ]);
 
   private _pageSizeOptions$: Observable<number[]> = of([5, 10, 15]);
@@ -131,42 +131,16 @@ export class CategoryProductsComponent implements OnInit {
     )
   }
 
-  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    products = products.filter(product => product.categoryId === filters.categoryId);
+  private _getSorting(filters: CategoryProductsFiltersQueryModel): Function {
+    const selectedSort = filters.sortings.find(sort => sort.id === filters.sort);
 
-    if (!isNaN(parseInt(filters.priceFrom))) {
-      const priceFrom = parseInt(filters.priceFrom);
-      products = products.filter(product => product.price >= priceFrom);
+    if (selectedSort === undefined) return (a: ProductModel, b: ProductModel) => 0;
+
+    if (selectedSort.sortAsc) {
+      return (a: ProductModel, b: ProductModel) => +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
     }
 
-    if (!isNaN(parseInt(filters.priceTo))) {
-      const priceTo = parseInt(filters.priceTo);
-      products = products.filter(product => product.price <= priceTo);
-    }
-
-    return products;
-  }
-
-  private _sortProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    const sortFunctionsMap = new Map([
-      [ProductSorting.featureValueDesc, (a: ProductModel, b: ProductModel) => b.featureValue - a.featureValue],
-      [ProductSorting.priceAsc, (a: ProductModel, b: ProductModel) => a.price - b.price],
-      [ProductSorting.priceDesc, (a: ProductModel, b: ProductModel) => b.price - a.price],
-      [ProductSorting.ratingValueDesc, (a: ProductModel, b: ProductModel) => b.ratingValue - a.ratingValue],
-    ]);
-
-    const sortFunction = sortFunctionsMap.get(filters.sort) ?? sortFunctionsMap.get(ProductSorting.featureValueDesc);
-
-    const sortedProducts = products.sort(sortFunction);
-
-    return sortedProducts;
-  }
-
-  private _paginateProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    return products.slice(
-      (filters.page - 1) * filters.limit,
-      filters.page * filters.limit
-    );
+    return (a: ProductModel, b: ProductModel) => +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
   }
 
   private _mapQueryModel(
@@ -174,22 +148,30 @@ export class CategoryProductsComponent implements OnInit {
     categories: CategoryModel[],
     products: ProductModel[]
   ): CategoryProductsQueryModel {
-    products = this._filterProducts(filters, products);
+    const sortingFunction = this._getSorting(filters) as (a: ProductModel, b: ProductModel) => number;
 
-    products = this._sortProducts(filters, products);
+    const currentProducts = products.filter(
+      product => product.categoryId === filters.categoryId
+        && (isNaN(parseInt(filters.priceFrom)) || product.price >= parseInt(filters.priceFrom))
+        && (isNaN(parseInt(filters.priceTo)) || product.price <= parseInt(filters.priceTo))
+    )
+      .sort(sortingFunction);
 
-    const productsCount = products.length;
+    const productsCount = currentProducts.length;
+
+    const paginatedProducts = currentProducts.slice(
+      (filters.page - 1) * filters.limit,
+      filters.page * filters.limit
+    );
 
     this._setPages(filters, productsCount);
-
-    products = this._paginateProducts(filters, products);
 
     const categoriesMap = categories.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, CategoryModel>);
 
     return {
       category: categoriesMap[filters.categoryId] ? this._mapCategoryToQueryModel(categoriesMap[filters.categoryId]) : undefined,
       categories: categories.map(category => this._mapCategoryToQueryModel(category)),
-      products: products.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
+      products: paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
       productsCount: productsCount,
       filters: filters
     }
