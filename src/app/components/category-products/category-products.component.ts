@@ -10,8 +10,7 @@ import { ProductService } from '../../services/product.service';
 import { CategoryProductsCategoryQueryModel } from '../../query-models/category-products-category.query-model';
 import { CategoryProductsProductQueryModel } from '../../query-models/category-products-product.query-model';
 import { ProductSorting } from 'src/app/statics/product-sorting.static';
-
-import { CategoryProductsFiltersModel } from 'src/app/models/category-products-filters.model';
+import { CategoryProductsFiltersQueryModel } from 'src/app/query-models/category-products-filters.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -22,17 +21,6 @@ import { CategoryProductsFiltersModel } from 'src/app/models/category-products-f
 })
 export class CategoryProductsComponent {
 
-  private _filters$: Observable<CategoryProductsFiltersModel> = combineLatest([
-    this._activatedRoute.params,
-    this._activatedRoute.queryParams
-  ]).pipe(
-    map(
-      ([params, queryParams]: [Params, Params]) => ({
-        categoryId: params['categoryId'],
-        sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc
-    }))
-  );
-
   private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of([
     { id: ProductSorting.featureValueDesc, name: 'Featured' },
     { id: ProductSorting.priceAsc, name: 'Price: Low to High' },
@@ -40,16 +28,28 @@ export class CategoryProductsComponent {
     { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating' }
   ]);
 
-  readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
-    this._filters$,
-    this._categoryService.getAll(),
-    this._productService.getAll(),
+  private _filters$: Observable<CategoryProductsFiltersQueryModel> = combineLatest([
+    this._activatedRoute.params,
+    this._activatedRoute.queryParams,
     this._sortings$
   ]).pipe(
     map(
+      ([params, queryParams, sortings]: [Params, Params, CategoryProductsSortQueryModel[]]) => ({
+        categoryId: params['categoryId'],
+        sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc,
+        sortings
+    }))
+  );
+
+  readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
+    this._filters$,
+    this._categoryService.getAll(),
+    this._productService.getAll()
+  ]).pipe(
+    map(
       (
-        [filters, categories, products, sortings]: [CategoryProductsFiltersModel, CategoryModel[], ProductModel[], CategoryProductsSortQueryModel[]]
-      ) => this._mapQueryModel(filters, categories, products, sortings)
+        [filters, categories, products]: [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[]]
+      ) => this._mapQueryModel(filters, categories, products)
     )
   );
 
@@ -73,7 +73,7 @@ export class CategoryProductsComponent {
     )
   }
 
-  private _filterProducts(filters: CategoryProductsFiltersModel, products: ProductModel[]): ProductModel[] {
+  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
     const sortFunctionsMap = new Map([
       [ProductSorting.featureValueDesc, (a: ProductModel, b: ProductModel) => { return b.featureValue - a.featureValue }],
       [ProductSorting.priceAsc, (a: ProductModel, b: ProductModel) => { return a.price - b.price }],
@@ -91,10 +91,9 @@ export class CategoryProductsComponent {
   }
 
   private _mapQueryModel(
-    filters: CategoryProductsFiltersModel,
+    filters: CategoryProductsFiltersQueryModel,
     categories: CategoryModel[],
-    products: ProductModel[],
-    sortings: CategoryProductsSortQueryModel[]
+    products: ProductModel[]
   ): CategoryProductsQueryModel {
     const filteredProducts = this._filterProducts(filters, products);
 
@@ -105,8 +104,7 @@ export class CategoryProductsComponent {
       categories: categories.map(category => this._mapCategoryToQueryModel(category)),
       products: filteredProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
       productsCount: filteredProducts.length,
-      sortings,
-      filters
+      filters: filters
     }
   }
 
