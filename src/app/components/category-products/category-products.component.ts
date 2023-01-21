@@ -14,8 +14,6 @@ import { CategoryService } from '../../services/category.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoryProductsComponent {
-  readonly categories$: Observable<CategoryModel[]> = this._categoryService.getAll();
-
   readonly model$: Observable<CategoryProductsQueryModel> = this._activatedRoute.params.pipe(
     switchMap(
       (params) => combineLatest([
