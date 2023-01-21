@@ -1,0 +1,88 @@
+<ng-container *ngIf="model$ | async as model">
+  <div class="row mb-10">
+    <div class="col-12 col-lg-3 col-md-4 mb-4 mb-md-0">
+      <div class="d-flex flex-column">
+        <div>
+          <img
+            [src]="model.logoUrl"
+            [alt]="model.name"
+            class="rounded-circle icon-shape icon-xxl"
+          />
+        </div>
+        <div class="mt-4">
+          <h1 class="mb-1 h4">{{ model.name }}</h1>
+          <div class="small text-muted">
+            <span>It is only {{ model.distanceInMeters | distance:'km':1 }} km away from you!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-9 col-md-8">
+      <div class="card mb-4 bg-light border-0 store-card">
+        <div class="card-body py-10 px-8">
+          <h2 class="mb-0 h5">{{ model.name }}</h2>
+          <p class="text-muted h6">
+            Whatever the occasion, we've got you covered.
+          </p>
+          <div class="row">
+            <div class="col-12 col-lg-6 col-xl-5">
+              <div class="position-relative">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Search {{ model.name }}"
+                  attr.aria-label="Search {{ model.name }}"
+                />
+                <button
+                  class="btn btn-light btn-absolute-search px-3"
+                  type="button"
+                >
+                  <img
+                    src="../assets/libs/feather-icons/dist/icons/search.svg"
+                    alt=""
+                    class="btn-absolute-search__icon"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" *ngIf="model.products.length; else noproducts">
+    <div class="col-12 mb-6">
+      <h3 class="mb-1">{{ model.name }} products:</h3>
+    </div>
+    <div
+      *ngFor="let item of model.products"
+      class="col-6 col-lg-3 col-xl-2 mb-4"
+    >
+      <a
+        [routerLink]="['/categories', item.id]"
+        class="text-decoration-none text-inherit"
+      >
+        <div class="card card-product outline-none border-0">
+          <div class="card-body text-center py-8">
+            <img
+              [src]="item.imageUrl"
+              [alt]="item.name"
+              class="mb-3 img-fluid"
+            />
+            <div class="text-truncate">{{ item.name }}</div>
+          </div>
+        </div></a
+      >
+    </div>
+  </div>
+
+  <ng-template #noproducts>
+    <div class="row">
+      <div class="col-12 mb-6">
+        <h3>No products found in {{ model.name }}</h3>
+      </div>
+    </div>
+  </ng-template>
+</ng-container>

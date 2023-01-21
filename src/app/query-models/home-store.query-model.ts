@@ -3,5 +3,5 @@ export interface HomeStoreQueryModel {
   readonly name: string;
   readonly logoUrl: string;
   readonly tags: string[];
-  readonly distanceInKm: string;
+  readonly distanceInMeters: number;
 }

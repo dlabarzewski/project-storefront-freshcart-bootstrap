@@ -75,7 +75,7 @@ export class HomeComponent {
       name: store.name,
       logoUrl: store.logoUrl,
       tags: (store.tagIds ?? []).map(tagId => tagsMap[tagId].name),
-      distanceInKm: (store.distanceInMeters / 1000).toFixed(1)
+      distanceInMeters: store.distanceInMeters
     }));
   }
 
