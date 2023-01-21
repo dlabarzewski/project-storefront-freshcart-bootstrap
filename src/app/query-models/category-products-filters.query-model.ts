@@ -7,4 +7,6 @@ export interface CategoryProductsFiltersQueryModel {
   readonly page: number;
   readonly sortings: CategoryProductsSortQueryModel[];
   readonly pageSizeOptions: number[];
+  readonly priceFrom: string;
+  readonly priceTo: string;
 }
