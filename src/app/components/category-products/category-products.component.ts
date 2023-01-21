@@ -107,29 +107,16 @@ export class CategoryProductsComponent {
     )
   }
 
-  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    return products.filter(product => product.categoryId === filters.categoryId);
-  }
-
-  private _sortProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
+  private _getSorting(filters: CategoryProductsFiltersQueryModel): Function {
     const selectedSort = filters.sortings.find(sort => sort.id === filters.sort);
 
-    if (selectedSort === undefined) return products;
+    if (selectedSort === undefined) return (a: ProductModel, b: ProductModel) => 0;
 
-    return products.sort((a: ProductModel, b: ProductModel) => {
-      if (selectedSort.sortAsc) {
-        return +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
-      }
+    if (selectedSort.sortAsc) {
+      return (a: ProductModel, b: ProductModel) => +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
+    }
 
-      return +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
-    })
-  }
-
-  private _paginateProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    return products.slice(
-      (filters.page - 1) * filters.limit,
-      filters.page * filters.limit
-    );
+    return (a: ProductModel, b: ProductModel) => +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
   }
 
   private _mapQueryModel(
@@ -137,13 +124,17 @@ export class CategoryProductsComponent {
     categories: CategoryModel[],
     products: ProductModel[]
   ): CategoryProductsQueryModel {
-    products = this._filterProducts(filters, products);
+    const sortingFunction = this._getSorting(filters) as (a: ProductModel, b: ProductModel) => number;
 
-    products = this._sortProducts(filters, products);
+    const currentProducts = products.filter(product => product.categoryId === filters.categoryId)
+      .sort(sortingFunction);
 
-    const productsCount = products.length;
+    const productsCount = currentProducts.length;
 
-    products = this._paginateProducts(filters, products);
+    const paginatedProducts = currentProducts.slice(
+      (filters.page - 1) * filters.limit,
+      filters.page * filters.limit
+    );
 
     this._setPages(filters, productsCount);
 
@@ -152,7 +143,7 @@ export class CategoryProductsComponent {
     return {
       category: categoriesMap[filters.categoryId] ? this._mapCategoryToQueryModel(categoriesMap[filters.categoryId]) : undefined,
       categories: categories.map(category => this._mapCategoryToQueryModel(category)),
-      products: products.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
+      products: paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
       productsCount: productsCount,
       filters: filters
     }
