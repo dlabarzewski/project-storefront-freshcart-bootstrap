@@ -1,0 +1,11 @@
+<small class="text-warning">
+  <ng-container *ngFor="let value of values | async">
+    <i *ngIf="ratingValue >= value; else half" class="bi bi-star-fill"></i>
+    <ng-template #half>
+      <i *ngIf="ratingValue >= (value - 0.5); else empty" class="bi bi-star-half"></i>
+    </ng-template>
+    <ng-template #empty>
+      <i class="bi bi-star"></i>
+    </ng-template>
+  </ng-container>
+</small>
