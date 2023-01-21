@@ -22,10 +22,10 @@ import { CategoryProductsFiltersQueryModel } from 'src/app/query-models/category
 export class CategoryProductsComponent {
 
   private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of([
-    { id: ProductSorting.featureValueDesc, name: 'Featured' },
-    { id: ProductSorting.priceAsc, name: 'Price: Low to High' },
-    { id: ProductSorting.priceDesc, name: 'Price: High to Low' },
-    { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating' }
+    { id: ProductSorting.featureValueDesc, name: 'Featured', sortBy: 'featureValue', sortAsc: false },
+    { id: ProductSorting.priceAsc, name: 'Price: Low to High', sortBy: 'price', sortAsc: true },
+    { id: ProductSorting.priceDesc, name: 'Price: High to Low', sortBy: 'price', sortAsc: false },
+    { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating', sortBy: 'ratingValue', sortAsc: false }
   ]);
 
   private _filters$: Observable<CategoryProductsFiltersQueryModel> = combineLatest([
@@ -74,20 +74,19 @@ export class CategoryProductsComponent {
   }
 
   private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    const sortFunctionsMap = new Map([
-      [ProductSorting.featureValueDesc, (a: ProductModel, b: ProductModel) => { return b.featureValue - a.featureValue }],
-      [ProductSorting.priceAsc, (a: ProductModel, b: ProductModel) => { return a.price - b.price }],
-      [ProductSorting.priceDesc, (a: ProductModel, b: ProductModel) => { return b.price - a.price }],
-      [ProductSorting.ratingValueDesc, (a: ProductModel, b: ProductModel) => { return b.ratingValue - a.ratingValue }],
-    ])
-
-    const sortFunction = sortFunctionsMap.get(filters.sort) ?? sortFunctionsMap.get(ProductSorting.featureValueDesc);
-    
     const categoryProducts = products.filter(product => product.categoryId === filters.categoryId);
 
-    const sortedProducts = categoryProducts.sort(sortFunction);
+    const selectedSort = filters.sortings.find(sort => sort.id === filters.sort);
 
-    return sortedProducts;
+    if (selectedSort === undefined) return categoryProducts;
+
+    return categoryProducts.sort((a: ProductModel, b: ProductModel) => {
+      if (selectedSort.sortAsc) {
+        return +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
+      }
+
+      return +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
+    })
   }
 
   private _mapQueryModel(
