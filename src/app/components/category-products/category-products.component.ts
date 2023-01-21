@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, of, map, startWith, tap, debounce, debounceTime } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, debounce, debounceTime, from, map, of, startWith, tap, filter, switchMap, shareReplay, take } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
@@ -25,6 +25,10 @@ export class CategoryProductsComponent implements OnInit {
   readonly priceFrom: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceFrom']);
   readonly priceTo: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceTo']);
 
+  private _queryParams = this._activatedRoute.queryParams.pipe(
+    shareReplay(1)
+  );
+
   private _defaultLimit: number = 5;
 
   private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of([
@@ -34,6 +38,9 @@ export class CategoryProductsComponent implements OnInit {
     { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating', sortBy: 'ratingValue', sortAsc: false }
   ]);
 
+  private _ratingOptions$: Observable<number[]> = of([5, 4, 3, 2, 1]);
+  private _ratingValues$: Observable<number[]> = of([1, 2, 3, 4, 5]);
+
   private _pageSizeOptions$: Observable<number[]> = of([5, 10, 15]);
 
   private _pagesSubject: BehaviorSubject<number[]> = new BehaviorSubject<number[]>([]);
@@ -41,23 +48,28 @@ export class CategoryProductsComponent implements OnInit {
 
   private _filters$: Observable<CategoryProductsFiltersQueryModel> = combineLatest([
     this._activatedRoute.params,
-    this._activatedRoute.queryParams,
+    this._queryParams,
     this._sortings$,
-    this._pageSizeOptions$
+    this._pageSizeOptions$,
+    this._ratingOptions$,
+    this._ratingValues$
   ]).pipe(
     map(
       (
-        [params, queryParams, sortings, pageSizeOptions]:
-        [Params, Params, CategoryProductsSortQueryModel[], number[]]
+        [params, queryParams, sortings, pageSizeOptions, ratingOptions, ratingValues]:
+          [Params, Params, CategoryProductsSortQueryModel[], number[], number[], number[]]
       ) => ({
         categoryId: params['categoryId'],
         sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc,
         limit: queryParams['limit'] !== undefined && +queryParams['limit'] > 0 ? +queryParams['limit'] : this._defaultLimit,
         page: queryParams['page'] !== undefined && +queryParams['page'] > 0 ? +queryParams['page'] : 1,
+        rate: queryParams['rate'] !== undefined && +queryParams['rate'] > 0 ? +queryParams['rate'] : 0,
         sortings,
         pageSizeOptions,
         priceFrom: queryParams['priceFrom'],
-        priceTo: queryParams['priceTo']
+        priceTo: queryParams['priceTo'],
+        ratingOptions,
+        ratingValues
       }))
   );
 
@@ -108,6 +120,24 @@ export class CategoryProductsComponent implements OnInit {
     this._navigate({ page: page });
   }
 
+  public onRatingChange(rate: number): void {
+    this._navigate({ rate: rate });
+  }
+
+  public onRatingClick(value: number): void {
+    this._queryParams.pipe(
+      tap(params => {
+        if (value == params['rate']) {
+          this._navigate({ rate: undefined });
+        }
+        else {
+          this._navigate({ rate: value });
+        }
+      }),
+      take(1)
+    ).subscribe();
+  }
+
   private _setPages(filters: CategoryProductsFiltersQueryModel, productsCount: number): void {
     const maxPage = Math.ceil(productsCount / filters.limit);
 
@@ -154,6 +184,7 @@ export class CategoryProductsComponent implements OnInit {
       product => product.categoryId === filters.categoryId
         && (isNaN(parseInt(filters.priceFrom)) || product.price >= parseInt(filters.priceFrom))
         && (isNaN(parseInt(filters.priceTo)) || product.price <= parseInt(filters.priceTo))
+        && product.ratingValue >= filters.rate
     )
       .sort(sortingFunction);
 
