@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Observable, combineLatest } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Observable, combineLatest, of, map } from 'rxjs';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
 import { CategoryModel } from '../../models/category.model';
 import { ProductModel } from '../../models/product.model';
+import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryService } from '../../services/category.service';
 import { ProductService } from '../../services/product.service';
 import { CategoryProductsCategoryQueryModel } from '../../query-models/category-products-category.query-model';
-import { CategoryProductsProductQueryModel } from 'src/app/query-models/category-products-product.query-model';
+import { CategoryProductsProductQueryModel } from '../../query-models/category-products-product.query-model';
+import { ProductSorting } from 'src/app/statics/product-sorting.static';
+import { CategoryProductsFiltersQueryModel } from 'src/app/query-models/category-products-filters.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -18,45 +20,101 @@ import { CategoryProductsProductQueryModel } from 'src/app/query-models/category
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoryProductsComponent {
-  readonly model$: Observable<CategoryProductsQueryModel> = this._activatedRoute.params.pipe(
-    switchMap(
-      (params) => combineLatest([
-        this._categoryService.getAll(),
-        this._productService.getAll()
-      ]).pipe(
-        map(
-          ([categories, products]: [CategoryModel[], ProductModel[]]) => this._mapQueryModel(params['categoryId'], categories, products)
-        )
-      )
+
+  private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of([
+    { id: ProductSorting.featureValueDesc, name: 'Featured', sortBy: 'featureValue', sortAsc: false },
+    { id: ProductSorting.priceAsc, name: 'Price: Low to High', sortBy: 'price', sortAsc: true },
+    { id: ProductSorting.priceDesc, name: 'Price: High to Low', sortBy: 'price', sortAsc: false },
+    { id: ProductSorting.ratingValueDesc, name: 'Avg. Rating', sortBy: 'ratingValue', sortAsc: false }
+  ]);
+
+  private _filters$: Observable<CategoryProductsFiltersQueryModel> = combineLatest([
+    this._activatedRoute.params,
+    this._activatedRoute.queryParams,
+    this._sortings$
+  ]).pipe(
+    map(
+      ([params, queryParams, sortings]: [Params, Params, CategoryProductsSortQueryModel[]]) => ({
+        categoryId: params['categoryId'],
+        sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc,
+        sortings
+    }))
+  );
+
+  readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
+    this._filters$,
+    this._categoryService.getAll(),
+    this._productService.getAll()
+  ]).pipe(
+    map(
+      (
+        [filters, categories, products]: [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[]]
+      ) => this._mapQueryModel(filters, categories, products)
     )
   );
 
-  constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService) {
+  constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService, private _router: Router) {
   }
 
-  private _mapQueryModel(categoryId: string, categories: CategoryModel[], products: ProductModel[]): CategoryProductsQueryModel {
-    const categoryProducts = products.filter(product => product.categoryId === categoryId);
+  public onSortingChange(target: EventTarget | null): void {
+    if (target === null) return;
+
+    const value = (target as HTMLSelectElement).value;
+
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: {
+          sort: value
+        },
+        queryParamsHandling: 'merge'
+      }
+    )
+  }
+
+  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
+    const categoryProducts = products.filter(product => product.categoryId === filters.categoryId);
+
+    const selectedSort = filters.sortings.find(sort => sort.id === filters.sort);
+
+    if (selectedSort === undefined) return categoryProducts;
+
+    return categoryProducts.sort((a: ProductModel, b: ProductModel) => {
+      if (selectedSort.sortAsc) {
+        return +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
+      }
+
+      return +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
+    })
+  }
+
+  private _mapQueryModel(
+    filters: CategoryProductsFiltersQueryModel,
+    categories: CategoryModel[],
+    products: ProductModel[]
+  ): CategoryProductsQueryModel {
+    const filteredProducts = this._filterProducts(filters, products);
 
     const categoriesMap = categories.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, CategoryModel>);
 
     return {
-      category: categoriesMap[categoryId] ? this._mapCategoryToQueryModel(categoriesMap[categoryId]) : undefined,
+      category: categoriesMap[filters.categoryId] ? this._mapCategoryToQueryModel(categoriesMap[filters.categoryId]) : undefined,
       categories: categories.map(category => this._mapCategoryToQueryModel(category)),
-      products: categoryProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
-      productsCount: categoryProducts.length
+      products: filteredProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
+      productsCount: filteredProducts.length,
+      filters: filters
     }
   }
 
-  private _mapCategoryToQueryModel(category: CategoryModel): CategoryProductsCategoryQueryModel
-  {
+  private _mapCategoryToQueryModel(category: CategoryModel): CategoryProductsCategoryQueryModel {
     return {
       id: category.id,
       name: category.name
     };
   }
 
-  private _mapProductToQueryModel(product: ProductModel, category: CategoryModel): CategoryProductsProductQueryModel
-  {
+  private _mapProductToQueryModel(product: ProductModel, category: CategoryModel): CategoryProductsProductQueryModel {
     return {
       id: product.id,
       name: product.name,

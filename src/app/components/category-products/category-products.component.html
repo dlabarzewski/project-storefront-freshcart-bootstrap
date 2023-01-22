@@ -30,8 +30,17 @@
       <div class="d-lg-flex justify-content-between align-items-center">
         <div class="mb-3 mb-lg-0">
           <p class="mb-0">
-            <span class="text-dark">{{ model.productsCount }} </span> Products found
+            <span class="text-dark">{{ model.productsCount }}</span>
+            Products found
           </p>
+        </div>
+
+        <div class="d-md-flex justify-content-between align-items-center">
+          <select class="form-select" (change)="onSortingChange($event.target)">
+            <option *ngFor="let item of model.filters.sortings" [value]="item.id" [selected]="item.id === model.filters.sort">
+              {{ item.name }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -42,8 +51,7 @@
               <div class="row align-items-center">
                 <div class="col-12 col-md-4">
                   <div class="text-center position-relative">
-                    <a
-                      [routerLink]="['/categories', product.id]"
+                    <a [routerLink]="['/categories', product.id]"
                       ><img
                         [src]="product.imageUrl"
                         [alt]="product.name"
@@ -54,19 +62,27 @@
 
                 <div class="col-12 col-md-8 flex-grow-1">
                   <div class="text-small mb-1">
-                    <a [routerLink]="['/categories', product.category.id]" class="text-decoration-none text-muted">
+                    <a
+                      [routerLink]="['/categories', product.category.id]"
+                      class="text-decoration-none text-muted"
+                    >
                       <small>{{ product.category.name }}</small>
                     </a>
                   </div>
 
                   <h2 class="fs-6">
-                    <a [routerLink]="['/categories', product.category.id]" class="text-inherit text-decoration-none">
+                    <a
+                      [routerLink]="['/categories', product.category.id]"
+                      class="text-inherit text-decoration-none"
+                    >
                       {{ product.name }}
                     </a>
                   </h2>
 
                   <div>
-                    <app-rating [ratingValue]="product.ratingValue"></app-rating>
+                    <app-rating
+                      [ratingValue]="product.ratingValue"
+                    ></app-rating>
                     <span class="text-muted small">
                       {{ product.ratingValue }}({{ product.ratingCount }})
                     </span>
@@ -77,12 +93,10 @@
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </ng-container>

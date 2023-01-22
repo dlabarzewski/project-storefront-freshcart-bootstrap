@@ -1,4 +1,5 @@
 import { CategoryProductsCategoryQueryModel } from "./category-products-category.query-model";
+import { CategoryProductsFiltersQueryModel } from "./category-products-filters.query-model";
 import { CategoryProductsProductQueryModel } from "./category-products-product.query-model";
 
 export interface CategoryProductsQueryModel {
@@ -6,4 +7,5 @@ export interface CategoryProductsQueryModel {
   readonly categories: CategoryProductsCategoryQueryModel[];
   readonly products: CategoryProductsProductQueryModel[];
   readonly productsCount: number;
+  readonly filters: CategoryProductsFiltersQueryModel;
 }
