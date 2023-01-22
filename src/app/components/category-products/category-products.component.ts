@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, debounceTime, map, of, shareReplay, take, tap } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, debounceTime, map, of, shareReplay, take, tap, startWith } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
@@ -56,12 +56,15 @@ export class CategoryProductsComponent implements OnInit {
     this._sortings$,
     this._pageSizeOptions$,
     this._ratingOptions$,
-    this._ratingValues$
+    this._ratingValues$,
+    this.storesFilter.valueChanges.pipe(
+      startWith('')
+    )
   ]).pipe(
     map(
       (
-        [params, queryParams, sortings, pageSizeOptions, ratingOptions, ratingValues]:
-          [Params, Params, CategoryProductsSortQueryModel[], number[], number[], number[]]
+        [params, queryParams, sortings, pageSizeOptions, ratingOptions, ratingValues, storesFilter]:
+          [Params, Params, CategoryProductsSortQueryModel[], number[], number[], number[], string]
       ) => ({
         categoryId: params['categoryId'],
         sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc,
@@ -74,10 +77,10 @@ export class CategoryProductsComponent implements OnInit {
         priceTo: queryParams['priceTo'],
         ratingOptions,
         ratingValues,
-        checkedStores: queryParams['stores'] !== undefined && queryParams['stores'] !== '' ? queryParams['stores'].split(',') : []
+        checkedStores: queryParams['stores'] !== undefined && queryParams['stores'] !== '' ? queryParams['stores'].split(',') : [],
+        storesFilter
       })
-    ),
-    tap(model => console.log(model))
+    )
   );
 
   readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
@@ -124,7 +127,9 @@ export class CategoryProductsComponent implements OnInit {
           checkedStores.add(storeId);
         }
 
-        this._navigate({ stores: Array.from(checkedStores).join(',') })
+        const storesList = Array.from(checkedStores).join(',');
+
+        this._navigate({ stores: storesList === '' ? undefined : storesList })
       }),
       take(1)
     ).subscribe();
@@ -233,8 +238,19 @@ export class CategoryProductsComponent implements OnInit {
       products: paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
       productsCount: productsCount,
       filters: filters,
-      stores: stores.map(store => this._mapStoreToQueryModel(store))
+      stores: stores.filter(store => this._filterStoreVisibility(filters, store))
+        .map(store => this._mapStoreToQueryModel(store))
     }
+  }
+
+  private _filterStoreVisibility(filters: CategoryProductsFiltersQueryModel, store: StoreModel): boolean {
+    return !!(
+      filters.storesFilter === ''
+      || (
+        store.name.toLowerCase().includes(filters.storesFilter.toLowerCase())
+        || (filters.checkedStores.length && filters.checkedStores.includes(store.id))
+      )
+    );
   }
 
   private _mapStoreToQueryModel(store: StoreModel): CategoryProductsStoreQueryModel {

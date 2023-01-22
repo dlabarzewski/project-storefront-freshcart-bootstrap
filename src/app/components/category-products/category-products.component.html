@@ -15,6 +15,12 @@
       </ul>
 
       <h5 class="mb-4 mt-8">Stores</h5>
+      <input
+        type="text"
+        class="form-control mb-4"
+        placeholder="Search by store"
+        [formControl]="storesFilter"
+      />
       <div *ngFor="let item of model.stores" class="form-check mb-2">
         <input
           id="filters-stores-{{ item.id }}"

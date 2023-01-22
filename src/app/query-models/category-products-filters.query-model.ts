@@ -13,4 +13,5 @@ export interface CategoryProductsFiltersQueryModel {
   readonly ratingOptions: number[];
   readonly ratingValues: number[];
   readonly checkedStores: string[];
+  readonly storesFilter: string;
 }
