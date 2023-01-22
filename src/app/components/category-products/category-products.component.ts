@@ -1,17 +1,20 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, debounce, debounceTime, from, map, of, startWith, tap, filter, switchMap, shareReplay, take } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, debounceTime, map, of, shareReplay, take, tap } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
 import { CategoryModel } from '../../models/category.model';
 import { ProductModel } from '../../models/product.model';
+import { StoreModel } from '../../models/store.model';
 import { CategoryService } from '../../services/category.service';
 import { ProductService } from '../../services/product.service';
+import { StoreService } from '../../services/store.service';
 import { CategoryProductsCategoryQueryModel } from '../../query-models/category-products-category.query-model';
 import { CategoryProductsProductQueryModel } from '../../query-models/category-products-product.query-model';
 import { ProductSorting } from 'src/app/statics/product-sorting.static';
+import { CategoryProductsStoreQueryModel } from 'src/app/query-models/category-products-store.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -24,6 +27,7 @@ export class CategoryProductsComponent implements OnInit {
 
   readonly priceFrom: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceFrom']);
   readonly priceTo: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceTo']);
+  readonly storesFilter: FormControl = new FormControl();
 
   private _queryParams = this._activatedRoute.queryParams.pipe(
     shareReplay(1)
@@ -69,23 +73,27 @@ export class CategoryProductsComponent implements OnInit {
         priceFrom: queryParams['priceFrom'],
         priceTo: queryParams['priceTo'],
         ratingOptions,
-        ratingValues
-      }))
+        ratingValues,
+        checkedStores: queryParams['stores'] !== undefined && queryParams['stores'] !== '' ? queryParams['stores'].split(',') : []
+      })
+    ),
+    tap(model => console.log(model))
   );
 
   readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
     this._filters$,
     this._categoryService.getAll(),
-    this._productService.getAll()
+    this._productService.getAll(),
+    this._storeService.getAll()
   ]).pipe(
     map(
       (
-        [filters, categories, products]: [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[]]
-      ) => this._mapQueryModel(filters, categories, products)
+        [filters, categories, products, stores]: [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[], StoreModel[]]
+      ) => this._mapQueryModel(filters, categories, products, stores)
     )
   );
 
-  constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService, private _router: Router) {
+  constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService, private _router: Router, private _storeService: StoreService) {
   }
 
   ngOnInit(): void {
@@ -101,6 +109,24 @@ export class CategoryProductsComponent implements OnInit {
       tap(value => {
         this._navigate({ priceTo: value })
       })
+    ).subscribe();
+  }
+
+  public onStoreSelect(storeId: string): void {
+    this._queryParams.pipe(
+      tap(params => {
+        const checkedStores = new Set(params['stores'] !== undefined && params['stores'] !== '' ? params['stores'].split(',') : []);
+
+        if (checkedStores.has(storeId)) {
+          checkedStores.delete(storeId);
+        }
+        else {
+          checkedStores.add(storeId);
+        }
+
+        this._navigate({ stores: Array.from(checkedStores).join(',') })
+      }),
+      take(1)
     ).subscribe();
   }
 
@@ -176,7 +202,8 @@ export class CategoryProductsComponent implements OnInit {
   private _mapQueryModel(
     filters: CategoryProductsFiltersQueryModel,
     categories: CategoryModel[],
-    products: ProductModel[]
+    products: ProductModel[],
+    stores: StoreModel[]
   ): CategoryProductsQueryModel {
     const sortingFunction = this._getSorting(filters) as (a: ProductModel, b: ProductModel) => number;
 
@@ -185,6 +212,7 @@ export class CategoryProductsComponent implements OnInit {
         && (isNaN(parseInt(filters.priceFrom)) || product.price >= parseInt(filters.priceFrom))
         && (isNaN(parseInt(filters.priceTo)) || product.price <= parseInt(filters.priceTo))
         && product.ratingValue >= filters.rate
+        && (!filters.checkedStores.length || product.storeIds.find(storeId => filters.checkedStores.includes(storeId)))
     )
       .sort(sortingFunction);
 
@@ -204,7 +232,15 @@ export class CategoryProductsComponent implements OnInit {
       categories: categories.map(category => this._mapCategoryToQueryModel(category)),
       products: paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
       productsCount: productsCount,
-      filters: filters
+      filters: filters,
+      stores: stores.map(store => this._mapStoreToQueryModel(store))
+    }
+  }
+
+  private _mapStoreToQueryModel(store: StoreModel): CategoryProductsStoreQueryModel {
+    return {
+      id: store.id,
+      name: store.name
     }
   }
 
