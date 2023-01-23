@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, of, map, startWith, tap, debounce, debounceTime } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, of, map, tap, debounceTime } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
