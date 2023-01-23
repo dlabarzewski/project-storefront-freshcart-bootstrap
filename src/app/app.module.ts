@@ -7,6 +7,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
+import { TabsModule } from 'ngx-bootstrap/tabs';
+import { CarouselModule } from 'ngx-bootstrap/carousel';
 
 @NgModule({
   declarations: [AppComponent],
@@ -17,7 +19,9 @@ import { CollapseModule } from 'ngx-bootstrap/collapse';
     HttpClientModule,
     CollapseModule,
     CommonModule,
-    RouterModule
+    RouterModule,
+    TabsModule.forRoot(),
+    CarouselModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent],
