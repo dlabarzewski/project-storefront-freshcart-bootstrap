@@ -112,7 +112,7 @@ export class CategoryProductsComponent implements OnInit {
     ]).pipe(
       take(1),
       tap(
-        ([stores, queryParams]: [StoreModel[], any]) => {
+        ([stores, queryParams]: [StoreModel[], Params]) => {
 
           const checkedStores: string[] = this._parseStoresQueryParam(queryParams['stores']);
 
