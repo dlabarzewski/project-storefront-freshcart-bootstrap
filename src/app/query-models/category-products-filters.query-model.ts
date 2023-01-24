@@ -5,13 +5,12 @@ export interface CategoryProductsFiltersQueryModel {
   readonly sort: number;
   readonly limit: number;
   readonly page: number;
-  readonly rate: number;
+  readonly rateFilter: number;
   readonly sortings: CategoryProductsSortQueryModel[];
   readonly pageSizeOptions: number[];
-  readonly priceFrom: string;
-  readonly priceTo: string;
+  readonly priceFromFilter: string;
+  readonly priceToFilter: string;
   readonly ratingOptions: number[];
-  readonly ratingValues: number[];
   readonly checkedStores: string[];
-  readonly storesFilter: string;
+  readonly storeSearchFilter: string;
 }
