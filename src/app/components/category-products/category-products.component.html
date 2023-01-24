@@ -21,17 +21,19 @@
         placeholder="Search by store"
         [formControl]="storesFilter"
       />
-      <div *ngFor="let item of model.stores" class="form-check mb-2">
-        <input
-          id="filters-stores-{{ item.id }}"
-          class="form-check-input"
-          type="checkbox"
-          (change)="onStoreSelect(item.id)"
-          [checked]="model.filters.checkedStores.includes(item.id)"
-        /><label for="filters-stores-{{ item.id }}" class="form-check-label">{{
-          item.name
-        }}</label>
-      </div>
+      <form [formGroup]="stores">
+        <div *ngFor="let item of model.stores" class="form-check mb-2">
+          <input
+            id="filters-stores-{{ item.id }}"
+            class="form-check-input"
+            type="checkbox"
+            [formControlName]="item.id"
+            [value]="item.id"
+          /><label for="filters-stores-{{ item.id }}" class="form-check-label">{{
+            item.name
+          }}</label>
+        </div>
+      </form>
 
       <h5 class="mb-4 mt-8">Price</h5>
       <input

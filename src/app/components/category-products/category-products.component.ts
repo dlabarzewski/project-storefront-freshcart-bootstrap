@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { AbstractControl, FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, debounceTime, map, of, shareReplay, take, tap, startWith } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, debounceTime, map, of, shareReplay, take, tap, startWith, mapTo, switchMap } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
@@ -29,9 +29,15 @@ export class CategoryProductsComponent implements OnInit {
   readonly priceTo: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceTo']);
   readonly storesFilter: FormControl = new FormControl();
 
+  private _storesList: Observable<StoreModel[]> = this._storeService.getAll().pipe(
+    shareReplay(1)
+  );
+
   private _queryParams = this._activatedRoute.queryParams.pipe(
     shareReplay(1)
   );
+
+  readonly stores: FormGroup = new FormGroup({});
 
   private _defaultLimit: number = 5;
 
@@ -87,7 +93,7 @@ export class CategoryProductsComponent implements OnInit {
     this._filters$,
     this._categoryService.getAll(),
     this._productService.getAll(),
-    this._storeService.getAll()
+    this._storesList
   ]).pipe(
     map(
       (
@@ -113,25 +119,40 @@ export class CategoryProductsComponent implements OnInit {
         this._navigate({ priceTo: value })
       })
     ).subscribe();
-  }
 
-  public onStoreSelect(storeId: string): void {
-    this._queryParams.pipe(
-      tap(params => {
-        const checkedStores = new Set(params['stores'] !== undefined && params['stores'] !== '' ? params['stores'].split(',') : []);
+    combineLatest([
+      this._storesList,
+      this._queryParams
+    ]).pipe(
+      take(1),
+      tap(
+        ([stores, queryParams]: [StoreModel[], any]) => {
 
-        if (checkedStores.has(storeId)) {
-          checkedStores.delete(storeId);
+          const checkedStores: string[] = queryParams['stores'] !== undefined && queryParams['stores'] !== '' ? queryParams['stores'].split(',') : [];
+
+          const checkedStoresMap = checkedStores.reduce((a, c) => ({ ...a, [c]: true }), {} as Record<string, boolean>);
+
+          const controls = stores.reduce(
+            (a, c) => ({ ...a, [c.id]: new FormControl(checkedStoresMap[c.id] ?? false) }),
+            {} as { [key: string]: AbstractControl; }
+          );
+
+          Object.keys(controls).forEach(key => {
+            this.stores.addControl(key, controls[key], { emitEvent: false });
+          });
         }
-        else {
-          checkedStores.add(storeId);
-        }
+      )
+    ).subscribe();
+
+    this.stores.valueChanges.pipe(
+      tap(storesValue => {
+        const checkedStores = Object.keys(storesValue)
+          .filter(store => storesValue[store] === true);
 
         const storesList = Array.from(checkedStores).join(',');
 
         this._navigate({ stores: storesList === '' ? undefined : storesList })
-      }),
-      take(1)
+      })
     ).subscribe();
   }
 
