@@ -31,11 +31,11 @@ export class CategoryProductsComponent implements OnInit {
   readonly storeSearchFilter: FormControl = new FormControl();
   readonly storesFilter: FormGroup = new FormGroup({});
 
-  private _storesList: Observable<StoreModel[]> = this._storeService.getAll().pipe( shareReplay(1) );
+  private _storesList$: Observable<StoreModel[]> = this._storeService.getAll().pipe( shareReplay(1) );
 
-  private _routeParams = this._activatedRoute.params.pipe( shareReplay(1) );
+  private _routeParams: Observable<Params> = this._activatedRoute.params.pipe( shareReplay(1) );
 
-  private _queryParams = this._activatedRoute.queryParams.pipe( shareReplay(1) );
+  private _queryParams: Observable<Params> = this._activatedRoute.queryParams.pipe( shareReplay(1) );
 
   private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of(CategoryProductsConfig.sortings);
 
@@ -79,7 +79,7 @@ export class CategoryProductsComponent implements OnInit {
     this._filters$,
     this._categoryService.getAll(),
     this._productService.getAll(),
-    this._storesList
+    this._storesList$
   ]).pipe(
     map(
       (
@@ -94,20 +94,20 @@ export class CategoryProductsComponent implements OnInit {
   ngOnInit(): void {
     this.priceFromFilter.valueChanges.pipe(
       debounceTime(250),
-      tap(value => {
+      tap((value: string) => {
         this._navigate({ priceFrom: value })
       })
     ).subscribe();
 
     this.priceToFilter.valueChanges.pipe(
       debounceTime(250),
-      tap(value => {
+      tap((value: string) => {
         this._navigate({ priceTo: value })
       })
     ).subscribe();
 
     combineLatest([
-      this._storesList,
+      this._storesList$,
       this._queryParams
     ]).pipe(
       take(1),
@@ -131,7 +131,7 @@ export class CategoryProductsComponent implements OnInit {
     ).subscribe();
 
     this.storesFilter.valueChanges.pipe(
-      tap(storesValue => {
+      tap((storesValue: { [key: string]: boolean }) => {
         const checkedStores = Object.keys(storesValue)
           .filter(store => storesValue[store] === true);
 
@@ -143,7 +143,7 @@ export class CategoryProductsComponent implements OnInit {
 
     this._queryParams.pipe(
       tap(
-        (queryParams) => {
+        (queryParams: Params) => {
           const checkedStores: string[] = this._parseStoresQueryParam(queryParams['stores']);
 
           const checkedStoresMap = checkedStores.reduce((a, c) => ({ ...a, [c]: true }), {} as Record<string, boolean>);
@@ -176,7 +176,7 @@ export class CategoryProductsComponent implements OnInit {
 
   public onRatingClick(value: number): void {
     this._queryParams.pipe(
-      tap(params => {
+      tap((params: Params) => {
         this._navigate({ rate: value == params['rate'] ? undefined : value });
       }),
       take(1)
@@ -186,13 +186,13 @@ export class CategoryProductsComponent implements OnInit {
   private _setPages(filters: CategoryProductsFiltersQueryModel, productsCount: number): void {
     const maxPage = Math.ceil(productsCount / filters.limit);
 
-    const pages = Array.from(Array(maxPage).keys()).map(x => ++x);
-
-    this._pagesSubject.next(pages);
-
     if (filters.page > maxPage && maxPage !== 0) {
       this._navigate({ page: maxPage })
     }
+
+    const pages = Array.from(Array(maxPage).keys()).map(x => ++x);
+
+    this._pagesSubject.next(pages);
   }
 
   private _navigate(queryParams: Object) {
@@ -207,7 +207,7 @@ export class CategoryProductsComponent implements OnInit {
   }
 
   private _parseNumericQueryParam(param: string|undefined, defaultValue: number = 0, isPositive: boolean = false): number {
-    return param !== undefined ? +param : defaultValue
+    return param !== undefined && (!isPositive || +param > 0) ? +param : defaultValue
   }
 
   private _parseStoresQueryParam(stores: string|undefined): string[] {
@@ -215,22 +215,23 @@ export class CategoryProductsComponent implements OnInit {
   }
 
   private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    const selectedSort = filters.sortings.find(sort => sort.id === filters.sort);
+    const selectedSort: CategoryProductsSortQueryModel|undefined = filters.sortings.find(sort => sort.id === filters.sort);
 
-    return products.filter(
-      product => product.categoryId === filters.categoryId
+    const filteredProducts = products.filter(
+      (product: ProductModel) => product.categoryId === filters.categoryId
         && (isNaN(parseInt(filters.priceFromFilter)) || product.price >= parseInt(filters.priceFromFilter))
         && (isNaN(parseInt(filters.priceToFilter)) || product.price <= parseInt(filters.priceToFilter))
         && product.ratingValue >= filters.rateFilter
         && (!filters.checkedStores.length || product.storeIds.find(storeId => filters.checkedStores.includes(storeId)))
-    )
-      .sort((a: ProductModel, b: ProductModel) => {
-        if (selectedSort === undefined) return 0;
+    );
 
-        if (selectedSort.sortAsc) return +a[selectedSort.sortBy] - +b[selectedSort.sortBy];
+    if (selectedSort === undefined) return filteredProducts;
 
-        return +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
-      });
+    return filteredProducts.sort((a: ProductModel, b: ProductModel) => {
+      return (selectedSort.sortAsc)
+        ? +a[selectedSort.sortBy] - +b[selectedSort.sortBy]
+        : +b[selectedSort.sortBy] - +a[selectedSort.sortBy];
+    });
   }
 
   private _mapQueryModel(
