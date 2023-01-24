@@ -15,8 +15,33 @@
       </ul>
 
       <h5 class="mb-4 mt-8">Price</h5>
-      <input type="text" class="form-control mb-4" placeholder="Price From" [formControl]="priceFrom">
-      <input type="text" class="form-control mb-4" placeholder="Price To" [formControl]="priceTo">
+      <input
+        type="text"
+        class="form-control mb-4"
+        placeholder="Price From"
+        [formControl]="priceFrom"
+      />
+      <input
+        type="text"
+        class="form-control mb-4"
+        placeholder="Price To"
+        [formControl]="priceTo"
+      />
+
+      <h5 class="mb-4 mt-8">Rating</h5>
+      <div *ngFor="let item of model.filters.ratingOptions" class="form-check mb-2">
+        <input
+          id="filters-rating-{{ item }}"
+          class="form-check-input"
+          type="radio"
+          name="filters-rating"
+          [checked]="item === model.filters.rate"
+          (click)="onRatingClick(item)"
+        />
+        <label for="filters-rating-{{ item }}" class="form-check-label text-warning">
+          <app-rating [ratingValue]="item"></app-rating>
+        </label>
+      </div>
     </div>
 
     <div class="col-12 col-lg-9 col-md-8">
@@ -88,9 +113,11 @@
                   </h2>
 
                   <div>
-                    <app-rating
-                      [ratingValue]="product.ratingValue"
-                    ></app-rating>
+                    <small class="text-warning">
+                      <app-rating
+                        [ratingValue]="product.ratingValue"
+                      ></app-rating>
+                    </small>
                     <span class="text-muted small">
                       {{ product.ratingValue }}({{ product.ratingCount }})
                     </span>
@@ -114,7 +141,10 @@
               *ngFor="let item of model.filters.pageSizeOptions"
               type="button"
               class="btn"
-              [ngClass]="{ 'btn-outline-primary': model.filters.limit !== item, 'btn-primary': model.filters.limit === item }"
+              [ngClass]="{
+                'btn-outline-primary': model.filters.limit !== item,
+                'btn-primary': model.filters.limit === item
+              }"
               (click)="onLimitChange(item)"
             >
               {{ item }}
@@ -129,7 +159,10 @@
               *ngFor="let item of pages$ | async"
               type="button"
               class="btn"
-              [ngClass]="{ 'btn-outline-primary': model.filters.page !== item, 'btn-primary': model.filters.page === item }"
+              [ngClass]="{
+                'btn-outline-primary': model.filters.page !== item,
+                'btn-primary': model.filters.page === item
+              }"
               (click)="onPageChange(item)"
             >
               {{ item }}
