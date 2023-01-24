@@ -3,5 +3,8 @@ import { CategoryProductsSortQueryModel } from "./category-products-sort.query-m
 export interface CategoryProductsFiltersQueryModel {
   readonly categoryId: string;
   readonly sort: number;
+  readonly limit: number;
+  readonly page: number;
   readonly sortings: CategoryProductsSortQueryModel[];
+  readonly pageSizeOptions: number[];
 }
