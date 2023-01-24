@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, of, map } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, of, map, tap, debounceTime } from 'rxjs';
 import { CategoryProductsSortQueryModel } from '../../query-models/category-products-sort.query-model';
 import { CategoryProductsFiltersQueryModel } from '../../query-models/category-products-filters.query-model';
 import { CategoryProductsQueryModel } from '../../query-models/category-products.query-model';
@@ -19,7 +20,10 @@ import { ProductSorting } from 'src/app/statics/product-sorting.static';
   encapsulation: ViewEncapsulation.Emulated,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CategoryProductsComponent {
+export class CategoryProductsComponent implements OnInit {
+
+  readonly priceFrom: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceFrom']);
+  readonly priceTo: FormControl = new FormControl(this._activatedRoute.snapshot.queryParams['priceTo']);
 
   private _defaultLimit: number = 5;
 
@@ -42,13 +46,18 @@ export class CategoryProductsComponent {
     this._pageSizeOptions$
   ]).pipe(
     map(
-      ([params, queryParams, sortings, pageSizeOptions]: [Params, Params, CategoryProductsSortQueryModel[], number[]]) => ({
+      (
+        [params, queryParams, sortings, pageSizeOptions]:
+        [Params, Params, CategoryProductsSortQueryModel[], number[]]
+      ) => ({
         categoryId: params['categoryId'],
         sort: queryParams['sort'] !== undefined ? +queryParams['sort'] : ProductSorting.featureValueDesc,
-        limit: queryParams['limit'] !== undefined ? +queryParams['limit'] : this._defaultLimit,
-        page: queryParams['page'] !== undefined ? +queryParams['page'] : 1,
+        limit: queryParams['limit'] !== undefined && +queryParams['limit'] > 0 ? +queryParams['limit'] : this._defaultLimit,
+        page: queryParams['page'] !== undefined && +queryParams['page'] > 0 ? +queryParams['page'] : 1,
         sortings,
-        pageSizeOptions
+        pageSizeOptions,
+        priceFrom: queryParams['priceFrom'],
+        priceTo: queryParams['priceTo']
       }))
   );
 
@@ -65,6 +74,22 @@ export class CategoryProductsComponent {
   );
 
   constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService, private _router: Router) {
+  }
+
+  ngOnInit(): void {
+    this.priceFrom.valueChanges.pipe(
+      debounceTime(250),
+      tap(value => {
+        this._navigate({ priceFrom: value })
+      })
+    ).subscribe();
+
+    this.priceTo.valueChanges.pipe(
+      debounceTime(250),
+      tap(value => {
+        this._navigate({ priceTo: value })
+      })
+    ).subscribe();
   }
 
   public onSortingChange(target: EventTarget | null): void {
@@ -90,7 +115,7 @@ export class CategoryProductsComponent {
 
     this._pagesSubject.next(pages);
 
-    if (filters.page > maxPage) {
+    if (filters.page > maxPage && maxPage !== 0) {
       this._navigate({ page: maxPage })
     }
   }
@@ -125,7 +150,11 @@ export class CategoryProductsComponent {
   ): CategoryProductsQueryModel {
     const sortingFunction = this._getSorting(filters) as (a: ProductModel, b: ProductModel) => number;
 
-    const currentProducts = products.filter(product => product.categoryId === filters.categoryId)
+    const currentProducts = products.filter(
+      product => product.categoryId === filters.categoryId
+        && (isNaN(parseInt(filters.priceFrom)) || product.price >= parseInt(filters.priceFrom))
+        && (isNaN(parseInt(filters.priceTo)) || product.price <= parseInt(filters.priceTo))
+    )
       .sort(sortingFunction);
 
     const productsCount = currentProducts.length;
