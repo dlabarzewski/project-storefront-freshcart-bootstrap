@@ -16,7 +16,16 @@ MIT
 @angular/router
 MIT
 
+ngx-bootstrap/carousel
+MIT
+
 ngx-bootstrap/collapse
+MIT
+
+ngx-bootstrap/tabs
+MIT
+
+ngx-bootstrap/utils
 MIT
 
 rxjs
