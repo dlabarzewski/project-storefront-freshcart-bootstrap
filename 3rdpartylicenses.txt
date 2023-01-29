@@ -16,10 +16,28 @@ MIT
 @angular/router
 MIT
 
+@ngx-translate/core
+MIT
+
+@ngx-translate/http-loader
+MIT
+
+ngx-bootstrap/alert
+MIT
+
 ngx-bootstrap/carousel
 MIT
 
 ngx-bootstrap/collapse
+MIT
+
+ngx-bootstrap/component-loader
+MIT
+
+ngx-bootstrap/dropdown
+MIT
+
+ngx-bootstrap/positioning
 MIT
 
 ngx-bootstrap/tabs
