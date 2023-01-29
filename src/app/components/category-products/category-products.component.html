@@ -22,7 +22,7 @@
         [formControl]="storeSearchFilter"
       />
       <form [formGroup]="storesFilter">
-        <div *ngFor="let item of model.stores" class="form-check mb-2">
+        <div *ngFor="let item of model.availableFilters.stores" class="form-check mb-2">
           <input
             id="filters-stores-{{ item.id }}"
             class="form-check-input"
@@ -53,7 +53,7 @@
 
       <h5 class="mb-4 mt-8">Rating</h5>
       <div
-        *ngFor="let item of model.filters.ratingOptions"
+        *ngFor="let item of model.availableFilters.ratingOptions"
         class="form-check mb-2"
       >
         <input
@@ -96,7 +96,7 @@
         <div class="d-md-flex justify-content-between align-items-center">
           <select class="form-select" (change)="onSortingChange($event.target)">
             <option
-              *ngFor="let item of model.filters.sortings"
+              *ngFor="let item of model.availableFilters.sortings"
               [value]="item.id"
               [selected]="item.id === model.filters.sort"
             >
@@ -167,7 +167,7 @@
           <h6>Limit</h6>
           <div class="btn-group" role="group">
             <button
-              *ngFor="let item of model.filters.pageSizeOptions"
+              *ngFor="let item of model.availableFilters.pageSizeOptions"
               type="button"
               class="btn"
               [ngClass]="{
@@ -185,7 +185,7 @@
           <h6>Pagination</h6>
           <div class="btn-group" role="group">
             <button
-              *ngFor="let item of pages$ | async"
+              *ngFor="let item of model.availableFilters.pages"
               type="button"
               class="btn"
               [ngClass]="{

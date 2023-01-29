@@ -16,6 +16,7 @@ import { CategoryProductsProductQueryModel } from '../../query-models/category-p
 import { ProductSorting } from 'src/app/statics/product-sorting.static';
 import { CategoryProductsStoreQueryModel } from 'src/app/query-models/category-products-store.query-model';
 import { CategoryProductsConfig } from 'src/app/statics/category-products-config.static';
+import { CategoryProductsAvailableFiltersQueryModel } from 'src/app/query-models/category-products-available-filters.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -33,59 +34,160 @@ export class CategoryProductsComponent implements OnInit {
 
   private _storesList$: Observable<StoreModel[]> = this._storeService.getAll().pipe( shareReplay(1) );
 
+  private _categoriesList$: Observable<CategoryModel[]> = this._categoryService.getAll().pipe( shareReplay(1) );
+
   private _routeParams: Observable<Params> = this._activatedRoute.params.pipe( shareReplay(1) );
 
   private _queryParams: Observable<Params> = this._activatedRoute.queryParams.pipe( shareReplay(1) );
 
-  private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of(CategoryProductsConfig.sortings);
+  private _products$: Observable<ProductModel[]> = this._productService.getAll().pipe( shareReplay(1) );
 
-  private _ratingOptions$: Observable<number[]> = of(CategoryProductsConfig.ratingOptions);
+  private _sortings$: Observable<CategoryProductsSortQueryModel[]> = of(CategoryProductsConfig.sortings).pipe( shareReplay(1) );
 
-  private _pageSizeOptions$: Observable<number[]> = of(CategoryProductsConfig.pageSizeOptions);
-
-  private _pagesSubject: BehaviorSubject<number[]> = new BehaviorSubject<number[]>([]);
-  public pages$: Observable<number[]> = this._pagesSubject.asObservable();
+  private _checkedStores$: Observable<string[]> = this._queryParams.pipe(
+    map(
+      queryParams => this._parseStoresQueryParam(queryParams['stores'])
+    )
+  )
 
   private _filters$: Observable<CategoryProductsFiltersQueryModel> = combineLatest([
     this._routeParams,
-    this._queryParams,
-    this._sortings$,
-    this._pageSizeOptions$,
-    this._ratingOptions$,
-    this.storeSearchFilter.valueChanges.pipe( startWith('') )
+    this._queryParams
   ]).pipe(
     map(
       (
-        [params, queryParams, sortings, pageSizeOptions, ratingOptions, storeSearchFilter]:
-        [Params, Params, CategoryProductsSortQueryModel[], number[], number[], string]
+        [params, queryParams]:
+        [Params, Params]
       ) => ({
         categoryId: params['categoryId'],
         sort: this._parseNumericQueryParam(queryParams['sort'], ProductSorting.featureValueDesc),
         limit: this._parseNumericQueryParam(queryParams['limit'], CategoryProductsConfig.defaultLimit, true),
         page: this._parseNumericQueryParam(queryParams['page'], 1, true),
         rateFilter: this._parseNumericQueryParam(queryParams['rate'], 0, true),
-        sortings,
-        pageSizeOptions,
         priceFromFilter: queryParams['priceFrom'] ?? '',
         priceToFilter: queryParams['priceTo'] ?? '',
-        ratingOptions,
-        checkedStores: this._parseStoresQueryParam(queryParams['stores']),
-        storeSearchFilter
+        checkedStores: this._parseStoresQueryParam(queryParams['stores'])
       })
-    )
+    ),
+    shareReplay(1)
   );
 
-  readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
+  private _filteredProducts: Observable<ProductModel[]> = combineLatest([
+    this._products$,
     this._filters$,
-    this._categoryService.getAll(),
-    this._productService.getAll(),
-    this._storesList$
+    this._sortings$
   ]).pipe(
     map(
       (
-        [filters, categories, products, stores]: [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[], StoreModel[]]
-      ) => this._mapQueryModel(filters, categories, products, stores)
+        [products, filters, sortings]:
+        [ProductModel[], CategoryProductsFiltersQueryModel, CategoryProductsSortQueryModel[]]
+      ) => this._filterProducts(filters, products, sortings)
+    ),
+    shareReplay(1)
+  )
+
+  private _pageSizeOptions$: Observable<number[]> = combineLatest([
+    this._filters$,
+    this._filteredProducts
+  ]).pipe(
+    tap(
+      (
+        [filters, products]: [CategoryProductsFiltersQueryModel, ProductModel[]]
+      ) => {
+        const maxPage = Math.ceil(products.length / filters.limit);
+
+        if (filters.page > maxPage && maxPage !== 0) {
+          this._navigate({ page: maxPage })
+        }
+      }
+    ),
+    map(
+      (
+        [filters, products]: [CategoryProductsFiltersQueryModel, ProductModel[]]
+      ) => {
+        const maxPage = Math.ceil(products.length / filters.limit);
+    
+        return Array.from(Array(maxPage).keys()).map(x => ++x);
+      }
     )
+  )
+
+  private _availableFilters$: Observable<CategoryProductsAvailableFiltersQueryModel> = combineLatest([
+    this._sortings$,
+    of(CategoryProductsConfig.pageSizeOptions),
+    of(CategoryProductsConfig.ratingOptions),
+    this._storesList$,
+    this._pageSizeOptions$,
+    this._checkedStores$,
+    this.storeSearchFilter.valueChanges.pipe( startWith('') )
+  ]).pipe(
+    map(
+      (
+        [sortings, pageSizeOptions, ratingOptions, stores, pages, checkedStores, storeSearchFilter]:
+        [CategoryProductsSortQueryModel[], number[], number[], StoreModel[], number[], string[], string]
+      ) => ({
+        sortings,
+        pageSizeOptions,
+        ratingOptions,
+        pages,
+        stores: stores.filter(store => this._filterStoreVisibility(checkedStores, storeSearchFilter, store))
+          .map(store => this._mapStoreToQueryModel(store))
+      })
+    ),
+    shareReplay(1)
+  );
+
+  private _productsCount$: Observable<number> = this._filteredProducts.pipe(
+    map((products: ProductModel[]) => products.length)
+  );
+
+  private _paginatedProducts$: Observable<CategoryProductsProductQueryModel[]> = combineLatest([
+    this._filters$,
+    this._categoriesList$,
+    this._filteredProducts
+  ]).pipe(
+    map(
+      (
+        [filters, categories, products]:
+        [CategoryProductsFiltersQueryModel, CategoryModel[], ProductModel[]]
+      ) => {
+        const paginatedProducts = products.slice(
+          (filters.page - 1) * filters.limit,
+          filters.page * filters.limit
+        );
+
+        const categoriesMap = categories.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, CategoryModel>);
+
+        return paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId]))
+      }
+    )
+  )
+
+  readonly model$: Observable<CategoryProductsQueryModel> = combineLatest([
+    this._filters$,
+    this._categoriesList$,
+    this._paginatedProducts$,
+    this._productsCount$,
+    this._availableFilters$
+  ]).pipe(
+    map(
+      (
+        [filters, categories, products, productsCount, availableFilters]:
+        [CategoryProductsFiltersQueryModel, CategoryModel[], CategoryProductsProductQueryModel[], number, CategoryProductsAvailableFiltersQueryModel]
+      ) => {
+        const categoriesMap = categories.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, CategoryModel>);
+
+        return {
+          category: categoriesMap[filters.categoryId] ? this._mapCategoryToQueryModel(categoriesMap[filters.categoryId]) : undefined,
+          categories: categories.map(category => this._mapCategoryToQueryModel(category)),
+          products,
+          productsCount,
+          filters,
+          availableFilters
+        }
+      }
+    ),
+    tap(console.log)
   );
 
   constructor(private _categoryService: CategoryService, private _activatedRoute: ActivatedRoute, private _productService: ProductService, private _router: Router, private _storeService: StoreService) {
@@ -141,21 +243,21 @@ export class CategoryProductsComponent implements OnInit {
       })
     ).subscribe();
 
-    this._queryParams.pipe(
-      tap(
-        (queryParams: Params) => {
-          const checkedStores: string[] = this._parseStoresQueryParam(queryParams['stores']);
+    // this._queryParams.pipe(
+    //   tap(
+    //     (queryParams: Params) => {
+    //       const checkedStores: string[] = this._parseStoresQueryParam(queryParams['stores']);
 
-          const checkedStoresMap = checkedStores.reduce((a, c) => ({ ...a, [c]: true }), {} as Record<string, boolean>);
+    //       const checkedStoresMap = checkedStores.reduce((a, c) => ({ ...a, [c]: true }), {} as Record<string, boolean>);
 
-          Object.keys(this.storesFilter.controls).forEach(
-            storeKey => {
-              this.storesFilter.controls[storeKey].setValue(checkedStoresMap[storeKey] ?? false)
-            }
-          );
-        }
-      )
-    ).subscribe();
+    //       Object.keys(this.storesFilter.controls).forEach(
+    //         storeKey => {
+    //           this.storesFilter.controls[storeKey].setValue(checkedStoresMap[storeKey] ?? false)
+    //         }
+    //       );
+    //     }
+    //   )
+    // ).subscribe();
   }
 
   public onSortingChange(target: EventTarget | null): void {
@@ -183,18 +285,6 @@ export class CategoryProductsComponent implements OnInit {
     ).subscribe();
   }
 
-  private _setPages(filters: CategoryProductsFiltersQueryModel, productsCount: number): void {
-    const maxPage = Math.ceil(productsCount / filters.limit);
-
-    if (filters.page > maxPage && maxPage !== 0) {
-      this._navigate({ page: maxPage })
-    }
-
-    const pages = Array.from(Array(maxPage).keys()).map(x => ++x);
-
-    this._pagesSubject.next(pages);
-  }
-
   private _navigate(queryParams: Object) {
     this._router.navigate(
       [],
@@ -214,8 +304,8 @@ export class CategoryProductsComponent implements OnInit {
     return stores !== undefined && stores !== '' ? stores.split(',') : [];
   }
 
-  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[]): ProductModel[] {
-    const selectedSort: CategoryProductsSortQueryModel|undefined = filters.sortings.find(sort => sort.id === filters.sort);
+  private _filterProducts(filters: CategoryProductsFiltersQueryModel, products: ProductModel[], sortings: CategoryProductsSortQueryModel[]): ProductModel[] {
+    const selectedSort: CategoryProductsSortQueryModel|undefined = sortings.find(sort => sort.id === filters.sort);
 
     const filteredProducts = products.filter(
       (product: ProductModel) => product.categoryId === filters.categoryId
@@ -234,40 +324,12 @@ export class CategoryProductsComponent implements OnInit {
     });
   }
 
-  private _mapQueryModel(
-    filters: CategoryProductsFiltersQueryModel,
-    categories: CategoryModel[],
-    products: ProductModel[],
-    stores: StoreModel[]
-  ): CategoryProductsQueryModel {
-    const currentProducts = this._filterProducts(filters, products);
-
-    this._setPages(filters, currentProducts.length);
-
-    const paginatedProducts = currentProducts.slice(
-      (filters.page - 1) * filters.limit,
-      filters.page * filters.limit
-    );
-
-    const categoriesMap = categories.reduce((a, c) => ({ ...a, [c.id]: c }), {} as Record<string, CategoryModel>);
-
-    return {
-      category: categoriesMap[filters.categoryId] ? this._mapCategoryToQueryModel(categoriesMap[filters.categoryId]) : undefined,
-      categories: categories.map(category => this._mapCategoryToQueryModel(category)),
-      products: paginatedProducts.map(product => this._mapProductToQueryModel(product, categoriesMap[product.categoryId])),
-      productsCount: currentProducts.length,
-      filters: filters,
-      stores: stores.filter(store => this._filterStoreVisibility(filters, store))
-        .map(store => this._mapStoreToQueryModel(store))
-    }
-  }
-
-  private _filterStoreVisibility(filters: CategoryProductsFiltersQueryModel, store: StoreModel): boolean {
+  private _filterStoreVisibility(checkedStores: string[], storeSearchFilter: string, store: StoreModel): boolean {
     return !!(
-      filters.storeSearchFilter === ''
+      storeSearchFilter === ''
       || (
-        store.name.toLowerCase().includes(filters.storeSearchFilter.toLowerCase())
-        || (filters.checkedStores.length && filters.checkedStores.includes(store.id))
+        store.name.toLowerCase().includes(storeSearchFilter.toLowerCase())
+        || (checkedStores.length && checkedStores.includes(store.id))
       )
     );
   }
