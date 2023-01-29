@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
+import { SharedModule } from 'src/app/shared.module';
 import { BasketComponent } from './basket.component';
 
 @NgModule({
-  imports: [RouterModule, CommonModule],
+  imports: [SharedModule, TranslateModule],
   declarations: [BasketComponent],
   providers: [],
   exports: [BasketComponent]

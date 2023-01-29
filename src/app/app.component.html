@@ -3,8 +3,23 @@
     <div class="container">
       <div class="row">
         <div class="col-md-6 col-12 text-center text-md-start">
-          <span> Super Value Deals - Save more with coupons</span>
+          <span>{{ 'Super Value Deals - Save more with coupons' | translate }} </span>
         </div>
+
+        <div class="col-6 text-end d-none d-md-block">
+          <div class="btn-group" dropdown>
+            <button id="language-select" dropdownToggle type="button" class="btn btn-sm dropdown-toggle text-decoration-none text-muted p-0"
+                    aria-controls="dropdown-language-select">
+              Language <span class="caret"></span>
+            </button>
+            <ul id="dropdown-language-select" *dropdownMenu class="dropdown-menu dropdown-menu-right my-0"
+                role="menu" aria-labelledby="language-select">
+              <li role="menuitem"><a class="dropdown-item" (click)="switchLanguage('en'); false">English</a></li>
+              <li role="menuitem"><a class="dropdown-item" (click)="switchLanguage('pl'); false">Polski</a></li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -92,7 +107,7 @@
                 class="nav-link"
                 [routerLink]="['/categories/', item.id]"
                 role="button"
-                >{{ item.name }}</a
+                >{{ item.name | translate }}</a
               >
             </li>
           </ul>
@@ -116,10 +131,10 @@
       <div class="col-12 col-md-12 col-lg-4">
         <div class="row g-4">
           <div class="col-12">
-            <h6 class="mb-4">Categories</h6>
+            <h6 class="mb-4">{{'Categories' | translate}}</h6>
             <ul class="nav" *ngIf="model$ | async as model">
               <li *ngFor="let item of model.categories" class="nav-item col-12">
-                <a [routerLink]="['/categories/', item.id]" class="nav-link">{{ item.name }}</a>
+                <a [routerLink]="['/categories/', item.id]" class="nav-link">{{ item.name | translate }}</a>
               </li>
             </ul>
           </div>
@@ -128,10 +143,10 @@
       <div class="col-12 col-md-12 col-lg-4">
         <div class="row g-4 pb-4">
           <div class="col-12">
-            <h6 class="mb-4">Stores</h6>
+            <h6 class="mb-4">{{'Stores' | translate}}</h6>
             <ul class="nav" *ngIf="model$ | async as model">
               <li *ngFor="let item of model.stores" class="nav-item col-12">
-                <a [routerLink]="['/stores/', item.id]" class="nav-link">{{ item.name }}</a>
+                <a [routerLink]="['/stores/', item.id]" class="nav-link">{{ item.name | translate }}</a>
               </li>
             </ul>
           </div>
@@ -140,10 +155,10 @@
       <div class="col-12 col-md-12 col-lg-4">
         <div class="row g-4">
           <div class="col-12">
-            <h6 class="mb-4">Get to know us</h6>
+            <h6 class="mb-4">{{'Get to know us' | translate}}</h6>
             <ul class="nav" *ngIf="model$ | async as model">
               <li *ngFor="let item of model.footerLinks" class="nav-item col-12 mb-2">
-                <a href="#!" class="nav-link">{{ item }}</a>
+                <a href="#!" class="nav-link">{{ item | translate }}</a>
               </li>
             </ul>
           </div>
@@ -154,7 +169,7 @@
       <div class="row align-items-center">
         <div class="col-lg-5 text-lg-start text-center mb-2 mb-lg-0">
           <ul class="list-inline mb-0">
-            <li class="list-inline-item text-dark">Payment Partners</li>
+            <li class="list-inline-item text-dark">{{'Payment Partners' | translate}}</li>
             <li class="list-inline-item">
               <a href="#!"
                 ><img src="/assets/images/payment/amazonpay.svg" alt=""
@@ -187,7 +202,7 @@
         <div class="col-lg-7 mt-4 mt-md-0">
           <ul class="list-inline mb-0 text-lg-end text-center">
             <li class="list-inline-item mb-2 mb-md-0 text-dark">
-              Get deliveries with FreshCart
+              {{'Get deliveries with FreshCart' | translate}}
             </li>
             <li class="list-inline-item ms-4">
               <a href="#!">
@@ -213,7 +228,7 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <ul class="list-inline text-md-end mb-0 small mt-3 mt-md-0">
-            <li class="list-inline-item text-muted">Follow us on</li>
+            <li class="list-inline-item text-muted">{{'Follow us on' | translate}}</li>
             <li class="list-inline-item me-1">
               <a href="#!" class="icon-shape icon-sm social-links">
                 <svg
