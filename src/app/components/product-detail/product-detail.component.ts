@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Observable, combineLatest, map, switchMap } from 'rxjs';
-import { ProductModel } from '../../models/product.model';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs/operators';
 import { ProductDetailQueryModel } from '../../query-models/product-detail.query-model';
+import { ProductModel } from '../../models/product.model';
+import { CategoryModel } from '../../models/category.model';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
-import { CategoryModel } from 'src/app/models/category.model';
-import { ProductDetailProductQueryModel } from 'src/app/query-models/product-detail-product.query-model';
-import { ProductDetailRelatedProductQueryModel } from 'src/app/query-models/product-detail-related-product.query-model';
+import { BasketService } from '../../services/basket.service';
+import { ProductDetailProductQueryModel } from '../../query-models/product-detail-product.query-model';
+import { ProductDetailRelatedProductQueryModel } from '../../query-models/product-detail-related-product.query-model';
 
 @Component({
   selector: 'app-product-detail',
@@ -16,6 +18,9 @@ import { ProductDetailRelatedProductQueryModel } from 'src/app/query-models/prod
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductDetailComponent {
+
+  private _alertsSubject: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  public alerts$: Observable<string[]> = this._alertsSubject.asObservable();
 
   private _relatedProductsCount: number = 5;
 
@@ -30,9 +35,15 @@ export class ProductDetailComponent {
         )
       )
     )
-  )
+  );
 
-  constructor(private _productService: ProductService, private _activatedRoute: ActivatedRoute, private _categoryService: CategoryService) {
+  constructor(private _productService: ProductService, private _activatedRoute: ActivatedRoute, private _categoryService: CategoryService, private _basketService: BasketService) {
+  }
+
+  public addToCart(id: string): void {
+    this._basketService.addProduct(id);
+
+    this._alertsSubject.next([...this._alertsSubject.value, 'Product added to cart'])
   }
 
   private _mapQueryModel(productId: string, products: ProductModel[], categories: CategoryModel[]): ProductDetailQueryModel {

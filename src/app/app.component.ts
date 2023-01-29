@@ -5,6 +5,7 @@ import { CategoryModel } from './models/category.model';
 import { StoreModel } from './models/store.model';
 import { CategoryService } from './services/category.service';
 import { StoreService } from './services/store.service';
+import { BasketService } from './services/basket.service';
 
 @Component({
   selector: 'app-root',
@@ -20,20 +21,28 @@ export class AppComponent {
     this._categoryService.getAll(),
     this._storeService.getAll(),
     of(['Company', 'About', 'Blog', 'Help Center', 'Our Value']),
-    this._isMobileMenuShownSubject.asObservable()
+    this._isMobileMenuShownSubject.asObservable(),
+    this._basketService.getCount()
   ]).pipe(
     map(
       (
-        [categories, stores, footerLinks, isMobileMenuShown]: [CategoryModel[], StoreModel[], string[], boolean]
-      ) => this._mapQueryModel(categories, stores, footerLinks, isMobileMenuShown)
+        [categories, stores, footerLinks, isMobileMenuShown, basketProductsCount]:
+        [CategoryModel[], StoreModel[], string[], boolean, number]
+      ) => this._mapQueryModel(categories, stores, footerLinks, isMobileMenuShown, basketProductsCount)
     ),
     shareReplay(1)
   )
 
-  constructor(private _categoryService: CategoryService, private _storeService: StoreService) {
+  constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _basketService: BasketService) {
   }
 
-  private _mapQueryModel(categories: CategoryModel[], stores: StoreModel[], footerLinks: string[], isMobileMenuShown: boolean): LayoutQueryModel {
+  private _mapQueryModel(
+    categories: CategoryModel[],
+    stores: StoreModel[],
+    footerLinks: string[],
+    isMobileMenuShown: boolean,
+    basketProductsCount: number
+  ): LayoutQueryModel {
     return {
       categories: categories.map(category => ({
         id: category.id,
@@ -44,7 +53,8 @@ export class AppComponent {
         name: store.name
       })),
       footerLinks,
-      isMobileMenuShown
+      isMobileMenuShown,
+      basketProductsCount
     };
   }
 
