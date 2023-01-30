@@ -9,6 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { CarouselModule } from 'ngx-bootstrap/carousel';
+import { AlertModule } from 'ngx-bootstrap/alert';
 
 @NgModule({
   declarations: [AppComponent],
@@ -21,7 +22,8 @@ import { CarouselModule } from 'ngx-bootstrap/carousel';
     CommonModule,
     RouterModule,
     TabsModule.forRoot(),
-    CarouselModule.forRoot()
+    CarouselModule.forRoot(),
+    AlertModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent],
