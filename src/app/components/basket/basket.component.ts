@@ -43,7 +43,7 @@ export class BasketComponent {
 
     const quantity = parseInt((event.target as HTMLInputElement).value);
 
-    if (isNaN(quantity)) return;
+    if (isNaN(quantity) || quantity < 1) return;
 
     this._basketService.changeProductQuantity(id, quantity);
   }

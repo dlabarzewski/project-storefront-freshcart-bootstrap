@@ -6,6 +6,8 @@ import { StoreModel } from './models/store.model';
 import { CategoryService } from './services/category.service';
 import { StoreService } from './services/store.service';
 import { BasketService } from './services/basket.service';
+import { TranslateService } from '@ngx-translate/core';
+import { LanguageConfig } from './statics/language-config.static';
 
 @Component({
   selector: 'app-root',
@@ -33,7 +35,9 @@ export class AppComponent {
     shareReplay(1)
   )
 
-  constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _basketService: BasketService) {
+  constructor(private _categoryService: CategoryService, private _storeService: StoreService, private _basketService: BasketService, private translate: TranslateService) {
+    translate.addLangs(LanguageConfig.languages.map(lang => lang.symbol));
+    translate.setDefaultLang(window.sessionStorage.getItem(LanguageConfig.storageKey) ?? LanguageConfig.defaultLanguage);
   }
 
   private _mapQueryModel(
@@ -64,5 +68,11 @@ export class AppComponent {
 
   public hideMobileMenu(): void {
     this._isMobileMenuShownSubject.next(false);
+  }
+
+  public switchLanguage(lang: string): void {
+    this.translate.use(lang);
+
+    window.sessionStorage.setItem(LanguageConfig.storageKey, lang);
   }
 }
